@@ -1,4 +1,4 @@
-package com.randos.musicvibe.ui.theme
+package com.randos.musicvibe.presentation.theme
 
 import android.app.Activity
 import android.os.Build

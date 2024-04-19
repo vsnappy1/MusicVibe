@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    alias(libs.plugins.daggerHilt)
+    id("kotlin-kapt")
 }
 
 android {
@@ -22,7 +24,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -59,11 +61,38 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    // --- Dagger Hilt ---
+    implementation(libs.hilt.android)
+
+    // --- Live Data ---
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.runtime.livedata)
+    implementation (libs.androidx.runtime.livedata)
+
+    // --- Navigation ---
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
+
+    // --- Kapt ---
+    kaptAndroidTest (libs.hilt.compiler)
+    kaptTest (libs.hilt.compiler)
+    kapt(libs.hilt.compiler)
+
+    /*--------------- Local Test ----------------*/
     testImplementation(libs.junit)
+    testImplementation(libs.hilt.android.testing)
+
+    /*--------------- Instrumentation Tests ----------------*/
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
+    androidTestImplementation(libs.hilt.android.testing)
+}
+
+kapt {
+    correctErrorTypes = true
 }

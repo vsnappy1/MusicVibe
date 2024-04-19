@@ -1,4 +1,4 @@
-package com.randos.musicvibe.ui.theme
+package com.randos.musicvibe.presentation.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
