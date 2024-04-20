@@ -2,6 +2,7 @@ package com.randos.musicvibe.data
 
 import android.content.Context
 import android.provider.MediaStore
+import com.randos.musicvibe.utils.ApiLevelHelper
 
 /**
  * MusicScanner is a helper class which helps in getting audio files present on device.
@@ -21,17 +22,26 @@ class MusicScanner(private val context: Context) {
 
         if (audioFiles.isNotEmpty()) return audioFiles
 
-        val projection = arrayOf(
+        val projection = mutableListOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.DURATION,
+            MediaStore.Audio.Media.DATE_ADDED,
             MediaStore.Audio.Media.DATA // Path to the file
         )
 
+        /**
+         * The genre of the audio file can only be accessed in Api level 30 or above
+         */
+        if (ApiLevelHelper.isApiLevel30OrAbove()) {
+            projection.add(MediaStore.Audio.Media.GENRE)
+        }
+
         val cursor = context.contentResolver.query(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-            projection,
+            projection.toTypedArray(),
             null,
             null,
             null
@@ -40,17 +50,40 @@ class MusicScanner(private val context: Context) {
         if (cursor != null) {
             while (cursor.moveToNext()) {
                 val id =
-                    cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media._ID).and(1))
+                    cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media._ID) ?: 0)
                 val title =
-                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE).and(1))
+                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE) ?: 0)
                 val artist =
-                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST).and(1))
+                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST) ?: 0)
                 val album =
-                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM).and(1))
-                val filePath =
-                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA).and(1))
+                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM) ?: 0)
+                val duration =
+                    cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION) ?: 0)
+                val dateAdded =
+                    cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED) ?: 0)
 
-                val audioFile = AudioFile(id, title, artist, album, filePath)
+                /**
+                 * The genre of the audio file can only be accessed in Api level 30 or above
+                 */
+                val genre = if (ApiLevelHelper.isApiLevel30OrAbove()) {
+                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.GENRE) ?: 0)
+                } else {
+                    ""
+                }
+                val filePath =
+                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA) ?: 0)
+
+                val audioFile = AudioFile(
+                    id,
+                    title,
+                    artist,
+                    album,
+                    duration,
+                    dateAdded,
+                    genre,
+                    filePath
+                )
+
                 audioFiles.add(audioFile)
             }
             cursor.close()

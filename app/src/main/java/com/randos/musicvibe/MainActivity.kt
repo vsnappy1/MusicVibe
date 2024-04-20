@@ -23,24 +23,31 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var musicScanner: MusicScanner
 
+    /*
+    TODO Complete Track Screen
+    TODO Implement Music Player
+    TODO Create Album Screen
+    ...
+     */
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            MusicVibeTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    TrackScreen()
+        checkForReadStoragePermission {
+            setContent {
+                MusicVibeTheme {
+                    // A surface container using the 'background' color from the theme
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        TrackScreen()
+                    }
                 }
             }
         }
-
-        checkForReadStoragePermission()
     }
 
-    private fun checkForReadStoragePermission() {
+    private fun checkForReadStoragePermission(permissionGranted: () -> Unit) {
         var permission = Manifest.permission.READ_EXTERNAL_STORAGE
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.TIRAMISU) {
@@ -49,10 +56,10 @@ class MainActivity : ComponentActivity() {
 
         checkPermission(
             permission = permission,
-            permissionGranted = {},
+            permissionGranted = permissionGranted,
             permissionNotGranted = {
                 launchPermissionRequest(permission = permission,
-                    onPermissionGranted = {},
+                    onPermissionGranted = permissionGranted,
                     onPermissionDenied = {})
             },
             showEducationalUi = {}
