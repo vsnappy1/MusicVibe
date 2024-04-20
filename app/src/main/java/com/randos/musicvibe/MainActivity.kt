@@ -24,7 +24,6 @@ class MainActivity : ComponentActivity() {
     lateinit var musicScanner: MusicScanner
 
     /*
-    TODO Complete Track Screen
     TODO Implement Music Player
     TODO Create Album Screen
     ...

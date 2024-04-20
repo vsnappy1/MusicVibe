@@ -23,7 +23,43 @@ class TrackViewModel @Inject constructor(
         viewModelScope.launch {
             val audioFiles = musicScanner.getAllAudioFiles()
             val sortedAudioFilesByTitle = audioFiles.sortedBy { it.title }
-            _uiState.postValue(_uiState.value?.copy(audioFiles = sortedAudioFilesByTitle, defaultMusicThumbnail = defaultMusicThumbnail))
+            _uiState.postValue(
+                _uiState.value?.copy(
+                    audioFiles = sortedAudioFilesByTitle,
+                    defaultMusicThumbnail = defaultMusicThumbnail
+                )
+            )
+        }
+    }
+
+    /**
+     * Find the index of first element which starts with [alphabet], if not found algorithm looks for
+     * previous alphabet (i.e. if there is no element which starts with X, then algorithm looks for
+     * element which starts W) and repeat the same for this alphabet.
+     */
+    private fun getIndex(alphabet: Char): Int {
+        val sortedAudioFilesByTitle = _uiState.value?.audioFiles
+        var index = -1
+        var code = alphabet.code
+        while (code >= 'A'.code &&
+            code <= 'Z'.code &&
+            index < 0
+        ) {
+            index =
+                sortedAudioFilesByTitle?.indexOfFirst { it.title.startsWith(code.toChar()) } ?: 0
+            code--
+        }
+
+        return if (index > 0) index else 0
+    }
+
+    fun updateSelectedIndex(alphabet: Char) {
+        viewModelScope.launch {
+            _uiState.postValue(
+                _uiState.value?.copy(
+                    selectedIndex = getIndex(alphabet)
+                )
+            )
         }
     }
 }
