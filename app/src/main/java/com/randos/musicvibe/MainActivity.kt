@@ -9,8 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.rememberNavController
 import com.randos.musicvibe.data.MusicScanner
-import com.randos.musicvibe.presentation.screen.track.TrackScreen
+import com.randos.musicvibe.navigation.MusicVibeNavHost
 import com.randos.musicvibe.presentation.theme.MusicVibeTheme
 import com.randos.musicvibe.utils.PermissionManager.checkPermission
 import com.randos.musicvibe.utils.PermissionManager.launchPermissionRequest
@@ -24,7 +25,6 @@ class MainActivity : ComponentActivity() {
     lateinit var musicScanner: MusicScanner
 
     /*
-    TODO Implement Navigation
     TODO Enable repeat mode and shuffle mode
     TODO Implement service for playback in notification
     TODO Implement playback controller on lock screen
@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        TrackScreen()
+                        MusicVibeNavHost(navController = rememberNavController())
                     }
                 }
             }

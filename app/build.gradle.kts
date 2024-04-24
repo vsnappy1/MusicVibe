@@ -68,6 +68,7 @@ android {
 dependencies {
 
     implementation(project(":MusicPlayer"))
+    implementation(project(":Core"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -87,6 +88,7 @@ dependencies {
 
     // --- Navigation ---
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.navigation.compose)
 
     // --- Kapt ---
     kaptAndroidTest (libs.hilt.compiler)

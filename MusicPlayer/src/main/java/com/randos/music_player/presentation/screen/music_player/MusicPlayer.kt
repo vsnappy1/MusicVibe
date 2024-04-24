@@ -21,8 +21,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,7 +38,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.util.RepeatModeUtil
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import com.randos.music_player.data.model.MusicPlayerFile
+import com.randos.core.navigation.NavigationDestinationWithParams
+import com.randos.core.data.model.MusicFile
+import com.randos.core.utils.Utils
 import com.randos.music_player.di.MusicVibeExoPlayer
 import com.randos.music_player.presentation.component.MusicPlaybackController
 import com.randos.music_player.presentation.component.MusicPlaybackControllerState
@@ -44,26 +48,35 @@ import com.randos.music_player.presentation.component.RepeatMode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+object MusicPlayerNavigationDestination : NavigationDestinationWithParams {
+    override val name: String = "Music Player"
+    override val route: String = "/music_player"
+    override val argument: String = "filePath"
+}
+
 @OptIn(UnstableApi::class)
 @Composable
 fun MusicPlayer(
-    musicPlayerFile: MusicPlayerFile,
+    path: String,
     activity: Activity = LocalContext.current as Activity,
 ) {
+    var musicFile by remember { mutableStateOf(MusicFile.default()) }
     val viewModel: MusicPlayerViewModel = hiltViewModel()
     val state by viewModel.uiState.observeAsState(
         MusicPlaybackControllerState(
-            trackLength = musicPlayerFile.duration
+            trackLength = musicFile.duration
         )
     )
     val exoPlayer: ExoPlayer = remember { MusicVibeExoPlayer.getInstance(activity) }
-    val mediaSource = remember(musicPlayerFile.path) { MediaItem.fromUri(musicPlayerFile.path) }
+    val mediaSource = remember(path) { MediaItem.fromUri(path) }
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     LaunchedEffect(mediaSource) {
+        musicFile = Utils.getMusicFile(context, path) ?: MusicFile.default()
         exoPlayer.setMediaItem(mediaSource)
         exoPlayer.prepare()
-        viewModel.setTrackLength(musicPlayerFile.duration)
+        viewModel.setTrackLength(musicFile.duration)
         delay(100) // Some delay before we start playing music.
         viewModel.onFirstLaunch()
 
@@ -79,7 +92,7 @@ fun MusicPlayer(
     }
 
     /**
-     * Trigger play and pause function on exoPlayer based on state
+     * Trigger play and pause function on exoPlayer based on state.
      */
     LaunchedEffect(key1 = state.isPlaying) {
         state.apply {
@@ -92,14 +105,14 @@ fun MusicPlayer(
     }
 
     /**
-     * Enable/Disable shuffle mode based on state
+     * Enable/Disable shuffle mode based on state.
      */
     LaunchedEffect(key1 = state.isShuffleOn) {
         exoPlayer.shuffleModeEnabled = state.isShuffleOn
     }
 
     /**
-     * Update repeat mode of exoPlayer based on state
+     * Update repeat mode of exoPlayer based on state.
      */
     LaunchedEffect(key1 = state.repeatMode) {
         exoPlayer.repeatMode = when (state.repeatMode) {
@@ -118,9 +131,9 @@ fun MusicPlayer(
 
         PreviewImageTitleArtist(
             modifier = Modifier.align(Alignment.Center),
-            previewImage = musicPlayerFile.thumbnail,
-            title = musicPlayerFile.title,
-            artist = musicPlayerFile.artist
+            previewImage = musicFile.previewImage,
+            title = musicFile.title,
+            artist = musicFile.artist
         )
 
         MusicPlaybackController(
@@ -158,7 +171,7 @@ private fun PreviewImageTitleArtist(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            bitmap = previewImage.asImageBitmap(), contentDescription = "",
+            bitmap = previewImage.asImageBitmap(), contentDescription = "Preview Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(300.dp)

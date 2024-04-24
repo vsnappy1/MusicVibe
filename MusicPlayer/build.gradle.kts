@@ -42,6 +42,8 @@ android {
 
 dependencies {
 
+    implementation(project(":Core"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.compose)

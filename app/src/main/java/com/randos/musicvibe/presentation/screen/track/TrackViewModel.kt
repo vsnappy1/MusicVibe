@@ -71,4 +71,12 @@ class TrackViewModel @Inject constructor(
             )
         }
     }
+
+    fun updateSelectedIndexFinished() {
+        _uiState.postValue(
+            _uiState.value?.copy(
+                selectedIndex = null
+            )
+        )
+    }
 }

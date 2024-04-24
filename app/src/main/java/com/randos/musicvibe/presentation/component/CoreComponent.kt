@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.randos.core.utils.Utils
 import com.randos.musicvibe.R
 import com.randos.musicvibe.data.AudioFile
 import com.randos.musicvibe.utils.IoUtils
@@ -103,7 +104,7 @@ fun MusicItem(
 fun PreviewMusicItem() {
     MusicItem(
         audioFile = AudioFile(1, "Title", "Artist", "Album", 100, 100, "Rock", ""),
-        defaultMusicThumbnail = IoUtils.generateBitmapFromDrawable(
+        defaultMusicThumbnail = Utils.generateBitmapFromDrawable(
             LocalContext.current,
             R.drawable.default_music_thumbnail
         ),
@@ -116,7 +117,8 @@ fun PreviewMusicItem() {
 @Composable
 fun AlphabetSlider(
     modifier: Modifier = Modifier,
-    onSelectionChange: (Char) -> Unit
+    onSelectionChange: (Char) -> Unit,
+    onSelectionChangeFinished: () -> Unit
 ) {
     val alphabets = ('A'..'Z').toList()
     var heightOfSingleItem by remember { mutableIntStateOf(0) }
@@ -155,14 +157,49 @@ fun AlphabetSlider(
                     heightOfSingleItem = coordinate.size.height / alphabets.size
                 }
                 .pointerInput(Unit) {
+                    /**
+                     * Detect vertical drag gesture on column, when drag starts enable flag to show
+                     * large alphabet and disable when drag gesture ends.
+                     */
                     detectVerticalDragGestures(
                         onDragStart = { isLargeAlphabetVisible = true },
-                        onDragEnd = { isLargeAlphabetVisible = false },
-                        onDragCancel = { isLargeAlphabetVisible = false },
+                        onDragEnd = {
+                            coroutineScope.launch {
+                                /**
+                                 * Allow some delay for smooth animation
+                                 */
+                                delay(250)
+                                isLargeAlphabetVisible = false
+                                onSelectionChangeFinished()
+                            }
+                        },
+                        onDragCancel = {
+                            coroutineScope.launch {
+                                /**
+                                 * Allow some delay for smooth animation
+                                 */
+                                delay(250)
+                                isLargeAlphabetVisible = false
+                                onSelectionChangeFinished()
+                            }
+                        },
                         onVerticalDrag = { change, _ ->
+                            /**
+                             * Find the index of item user currently pointing to by dividing the
+                             * offset.y with height of single item.
+                             */
                             val itemIndex = ((change.position.y) / heightOfSingleItem).toInt()
+
+                            /**
+                             * Get the alphabet based on the index.
+                             */
                             val alphabet =
-                                if (itemIndex < 0) 'A' else if (itemIndex > 25) 'Z' else (65 + itemIndex).toChar()
+                                if (itemIndex < 0) 'A' else if (itemIndex > 25) 'Z' else (65 + itemIndex).toChar() // Added 65 to itemIndex to ensure proper ASCII code
+
+                            /**
+                             * Do the assignment and invoke onSelectionChange only when user has
+                             * scrolled to a new alphabet.
+                             */
                             if (selectedAlphabet != alphabet.toString()) {
                                 selectedAlphabet = alphabet.toString()
                                 onSelectionChange(alphabet)
@@ -177,12 +214,19 @@ fun AlphabetSlider(
                     text = "$alphabet",
                     modifier = Modifier.pointerInput(Unit) {
                         detectTapGestures { _ ->
+                            /**
+                             * Detect tap gesture
+                             */
                             selectedAlphabet = alphabet.toString()
                             onSelectionChange(alphabet)
                             isLargeAlphabetVisible = true
                             coroutineScope.launch {
+                                /**
+                                 * Allow some delay for smooth animation
+                                 */
                                 delay(250)
                                 isLargeAlphabetVisible = false
+                                onSelectionChangeFinished()
                             }
                         }
                     },
@@ -196,7 +240,8 @@ fun AlphabetSlider(
 @Preview
 @Composable
 fun PreviewAlphabetSlider() {
-    AlphabetSlider(onSelectionChange = {})
+    AlphabetSlider(onSelectionChange = {},
+        onSelectionChangeFinished = {})
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -1,7 +1,5 @@
 package com.randos.musicvibe.data
 
-import android.graphics.Bitmap
-import com.randos.music_player.data.model.MusicPlayerFile
 
 data class AudioFile(
     val id: Long,
@@ -13,7 +11,3 @@ data class AudioFile(
     val genre: String?,
     val path: String
 )
-
-fun AudioFile.toMusicPlayerFile(thumbnail: Bitmap): MusicPlayerFile {
-    return MusicPlayerFile(id, title,artist, album, duration.toLong(), path, thumbnail)
-}

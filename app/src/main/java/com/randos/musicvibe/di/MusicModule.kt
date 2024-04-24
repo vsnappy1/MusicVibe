@@ -2,9 +2,9 @@ package com.randos.musicvibe.di
 
 import android.content.Context
 import android.graphics.Bitmap
+import com.randos.core.utils.Utils
 import com.randos.musicvibe.R
 import com.randos.musicvibe.data.MusicScanner
-import com.randos.musicvibe.utils.IoUtils
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,6 +25,6 @@ class MusicModule {
     @Singleton
     @Provides
     fun provideDefaultMusicThumbnail(@ApplicationContext context: Context): Bitmap {
-        return IoUtils.generateBitmapFromDrawable(context, R.drawable.default_music_thumbnail)
+        return Utils.generateBitmapFromDrawable(context, R.drawable.default_music_thumbnail)
     }
 }
