@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
@@ -53,15 +54,23 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun MusicItem(
+    modifier: Modifier = Modifier,
     audioFile: AudioFile,
-    defaultMusicThumbnail: Bitmap
+    defaultMusicThumbnail: Bitmap,
+    onClick: (Bitmap) -> Unit
 ) {
     var bitmap by remember { mutableStateOf(defaultMusicThumbnail) }
     LaunchedEffect(key1 = Unit) {
         bitmap = IoUtils.getAlbumImage(audioFile.path) ?: defaultMusicThumbnail
     }
 
-    Row(modifier = Modifier.fillMaxWidth()) {
+    val rowModifier = remember {
+        modifier
+            .fillMaxWidth()
+            .clickable { onClick(bitmap) }
+    }
+
+    Row(modifier = rowModifier) {
         Image(
             bitmap = bitmap.asImageBitmap(), contentDescription = "",
             contentScale = ContentScale.Crop,
@@ -97,7 +106,8 @@ fun PreviewMusicItem() {
         defaultMusicThumbnail = IoUtils.generateBitmapFromDrawable(
             LocalContext.current,
             R.drawable.default_music_thumbnail
-        )
+        ),
+        onClick = {}
     )
 }
 

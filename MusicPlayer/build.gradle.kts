@@ -1,43 +1,23 @@
-import java.util.Properties
-
 plugins {
-    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.androidLibrary)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     alias(libs.plugins.daggerHilt)
     id("kotlin-kapt")
 }
 
 android {
-    namespace = "com.randos.musicvibe"
+    namespace = "com.randos.musicplayer"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.randos.musicvibe"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
-    }
-
-    val properties = Properties()
-    properties.load(rootProject.file("local.properties").inputStream())
-    signingConfigs {
-        create("release"){
-            keyAlias = "${properties["keyAlias"]}"
-            keyPassword = "${properties["keyPassword"]}"
-            storeFile = file("keystore.jks")
-            storePassword = "${properties["storePassword"]}"
-        }
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -58,35 +38,35 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
 }
 
 dependencies {
 
-    implementation(project(":MusicPlayer"))
-
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.material)
 
     // --- Dagger Hilt ---
     implementation(libs.hilt.android)
 
     // --- Live Data ---
-    implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.runtime.livedata)
 
     // --- Navigation ---
     implementation(libs.androidx.hilt.navigation.compose)
+
+    // --- Media3 ExoPlayer
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.exoplayer.dash)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.session)
 
     // --- Kapt ---
     kaptAndroidTest (libs.hilt.compiler)

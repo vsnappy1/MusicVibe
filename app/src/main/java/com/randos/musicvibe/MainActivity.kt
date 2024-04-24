@@ -24,7 +24,11 @@ class MainActivity : ComponentActivity() {
     lateinit var musicScanner: MusicScanner
 
     /*
-    TODO Implement Music Player
+    TODO Implement Navigation
+    TODO Enable repeat mode and shuffle mode
+    TODO Implement service for playback in notification
+    TODO Implement playback controller on lock screen
+    TODO Create playback controller Widget
     TODO Create Album Screen
     ...
      */

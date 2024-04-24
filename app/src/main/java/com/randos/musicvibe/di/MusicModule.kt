@@ -24,8 +24,7 @@ class MusicModule {
 
     @Singleton
     @Provides
-    fun provideDefaultMusicThumbnail(@ApplicationContext context: Context): Bitmap{
+    fun provideDefaultMusicThumbnail(@ApplicationContext context: Context): Bitmap {
         return IoUtils.generateBitmapFromDrawable(context, R.drawable.default_music_thumbnail)
     }
-
 }

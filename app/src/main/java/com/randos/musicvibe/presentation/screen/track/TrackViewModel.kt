@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.randos.musicvibe.data.AudioFile
 import com.randos.musicvibe.data.MusicScanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -30,6 +31,14 @@ class TrackViewModel @Inject constructor(
                 )
             )
         }
+    }
+
+    fun updateSelectedAudioFile(audioFile: AudioFile?){
+        _uiState.postValue(
+            _uiState.value?.copy(
+                selectedAudioFile = audioFile
+            )
+        )
     }
 
     /**
