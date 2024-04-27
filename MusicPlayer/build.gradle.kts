@@ -70,6 +70,9 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.session)
 
+    // --- Glide ---
+    implementation (libs.glide.compose)
+
     // --- Kapt ---
     kaptAndroidTest (libs.hilt.compiler)
     kaptTest (libs.hilt.compiler)

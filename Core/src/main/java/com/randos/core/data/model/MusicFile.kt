@@ -1,24 +1,26 @@
 package com.randos.core.data.model
 
-import android.graphics.Bitmap
-
 data class MusicFile(
+    val id: Long,
     val title: String,
     val artist: String,
     val album: String,
     val duration: Long,
     val path: String,
-    val previewImage: Bitmap
+    val dateAdded: Long,
+    val genre: String?,
 ) {
     companion object {
         fun default(): MusicFile {
             return MusicFile(
+                id = -1,
                 title = "",
                 artist = "",
                 album = "",
                 duration = 1000,
                 path = "",
-                previewImage = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888)
+                dateAdded = 0,
+                genre = null
             )
         }
     }

@@ -1,44 +1,31 @@
 package com.randos.musicvibe.presentation.screen.track
 
-import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.randos.musicvibe.data.AudioFile
-import com.randos.musicvibe.data.MusicScanner
+import com.randos.core.data.MusicScanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class TrackViewModel @Inject constructor(
-    musicScanner: MusicScanner,
-    defaultMusicThumbnail: Bitmap
+    musicScanner: MusicScanner
 ) : ViewModel() {
 
+    private val indexMap = mutableMapOf<Char, Int>()
     private val _uiState = MutableLiveData(TrackScreenUiState())
     val uiState: LiveData<TrackScreenUiState> = _uiState
 
     init {
         viewModelScope.launch {
-            val audioFiles = musicScanner.getAllAudioFiles()
-            val sortedAudioFilesByTitle = audioFiles.sortedBy { it.title }
             _uiState.postValue(
                 _uiState.value?.copy(
-                    audioFiles = sortedAudioFilesByTitle,
-                    defaultMusicThumbnail = defaultMusicThumbnail
+                    musicFiles = musicScanner.musicFiles,
                 )
             )
         }
-    }
-
-    fun updateSelectedAudioFile(audioFile: AudioFile?){
-        _uiState.postValue(
-            _uiState.value?.copy(
-                selectedAudioFile = audioFile
-            )
-        )
     }
 
     /**
@@ -47,7 +34,11 @@ class TrackViewModel @Inject constructor(
      * element which starts W) and repeat the same for this alphabet.
      */
     private fun getIndex(alphabet: Char): Int {
-        val sortedAudioFilesByTitle = _uiState.value?.audioFiles
+        /**
+         * Using a map [indexMap] as a cache mechanism for improved performance.
+         */
+        if (indexMap.containsKey(alphabet)) return indexMap[alphabet] ?: 0
+        val sortedMusicFilesByTitle = _uiState.value?.musicFiles
         var index = -1
         var code = alphabet.code
         while (code >= 'A'.code &&
@@ -55,28 +46,22 @@ class TrackViewModel @Inject constructor(
             index < 0
         ) {
             index =
-                sortedAudioFilesByTitle?.indexOfFirst { it.title.startsWith(code.toChar()) } ?: 0
+                sortedMusicFilesByTitle?.indexOfFirst { it.title.startsWith(code.toChar()) } ?: 0
             code--
         }
 
-        return if (index > 0) index else 0
+        val result = if (index > 0) index else 0
+        indexMap[alphabet] = result
+        return result
     }
 
-    fun updateSelectedIndex(alphabet: Char) {
+    fun updateSelectedIndex(alphabet: Char?) {
         viewModelScope.launch {
             _uiState.postValue(
                 _uiState.value?.copy(
-                    selectedIndex = getIndex(alphabet)
+                    selectedIndex = alphabet?.let { getIndex(alphabet) }
                 )
             )
         }
-    }
-
-    fun updateSelectedIndexFinished() {
-        _uiState.postValue(
-            _uiState.value?.copy(
-                selectedIndex = null
-            )
-        )
     }
 }

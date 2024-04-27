@@ -55,16 +55,20 @@ internal enum class RepeatMode {
  *
  * @param isPlaying Specifies if track is playing or is in pause state.
  * @param isShuffleOn Specifies if shuffle mode is enabled or disabled.
- * @param repeatMode Specifies the repeat mode [RepeatMode]
+ * @param repeatMode Specifies the repeat mode [RepeatMode].
  * @param seekPosition It is current position of track play back in milliseconds.
- * @param trackLength It is the total length of track in milliseconds
+ * @param trackLength It is the total length of track in milliseconds.
+ * @param isNextEnabled enable when next item in playlist is available.
+ * @param isPreviousEnabled enable when previous item in playlist is available.
  */
 internal data class MusicPlaybackControllerState(
     val isPlaying: Boolean = false,
     val isShuffleOn: Boolean = false,
     val repeatMode: RepeatMode = RepeatMode.NONE,
     val seekPosition: Long = 0,
-    val trackLength: Long = 100
+    val trackLength: Long = 100,
+    val isNextEnabled: Boolean = false,
+    val isPreviousEnabled: Boolean = false
 )
 
 @Composable
@@ -90,8 +94,8 @@ internal fun MusicPlaybackController(
             onPlayPauseClick,
             onShuffleClick,
             onRepeatModeClick,
-            onPreviousClick,
             onNextClick,
+            onPreviousClick,
         )
     }
 }
@@ -102,8 +106,8 @@ private fun MusicPlaybackButtons(
     onPlayPauseClick: () -> Unit,
     onShuffleClick: () -> Unit,
     onRepeatModeClick: () -> Unit,
-    onPreviousClick: () -> Unit,
-    onNextClick: () -> Unit
+    onNextClick: () -> Unit,
+    onPreviousClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -120,6 +124,7 @@ private fun MusicPlaybackButtons(
         PlaybackControllerIcon(
             imageVector = Icons.Rounded.PlayArrow,
             contentDescription = "Play Previous Track",
+            enabled = state.isPreviousEnabled,
             modifier = Modifier.rotate(180f),
             onClick = { onPreviousClick() }
         )
@@ -132,6 +137,7 @@ private fun MusicPlaybackButtons(
         PlaybackControllerIcon(
             imageVector = Icons.Rounded.PlayArrow,
             contentDescription = "Play Next Track",
+            enabled = state.isNextEnabled,
             onClick = { onNextClick() }
         )
         PlaybackControllerIcon(
@@ -151,6 +157,7 @@ private fun PlaybackControllerIcon(
     contentDescription: String,
     tint: Color = MaterialTheme.colorScheme.onBackground,
     size: Dp = 40.dp,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
 
@@ -166,14 +173,14 @@ private fun PlaybackControllerIcon(
         .scale(scale)
         .size(size)
         .clip(CircleShape)
-        .clickable {
-            isClicked = true
+        .clickable(enabled) {
             onClick()
+            isClicked = true
         }) {
         Icon(
             imageVector = imageVector,
             contentDescription = contentDescription,
-            tint = tint,
+            tint = if (enabled) tint else MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(8.dp)
@@ -275,7 +282,9 @@ private fun PreviewMusicPlayerController() {
         isShuffleOn = false,
         repeatMode = RepeatMode.NONE,
         seekPosition = 50,
-        trackLength = 10000
+        trackLength = 10000,
+        isNextEnabled = false,
+        isPreviousEnabled = true
     ),
         onPlayPauseClick = {},
         onShuffleClick = {},

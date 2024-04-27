@@ -90,6 +90,9 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.navigation.compose)
 
+    // --- Glide ---
+    implementation (libs.glide.compose)
+
     // --- Kapt ---
     kaptAndroidTest (libs.hilt.compiler)
     kaptTest (libs.hilt.compiler)

@@ -1,4 +1,4 @@
-package com.randos.musicvibe.utils
+package com.randos.core.utils
 
 import android.os.Build
 

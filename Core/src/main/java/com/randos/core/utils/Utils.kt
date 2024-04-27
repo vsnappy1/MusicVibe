@@ -9,7 +9,6 @@ import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import com.randos.core.R
-import com.randos.core.data.model.MusicFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -21,48 +20,32 @@ object Utils {
 
     /**
      * @param path Absolute path to the audio file
-     * @return [MusicFile] or null when not found.
+     * @return Bitmap thumbnail associated with an audio file or null when not found.
      */
-    suspend fun getMusicFile(context: Context, path: String): MusicFile? {
+    suspend fun getAlbumImage(path: String): Bitmap? {
         return CoroutineScope(coroutineContext).async(Dispatchers.IO) {
             try {
                 val retriever = MediaMetadataRetriever()
                 retriever.setDataSource(path)
-                val embeddedPicture = retriever.embeddedPicture
-                val title =
-                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE).orEmpty()
-                val artist =
-                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST).orEmpty()
-                val album =
-                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM).orEmpty()
-                val duration =
-                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                        ?.toLong() ?: 0
-                val previewImage = embeddedPicture?.let {
-                    BitmapFactory.decodeByteArray(
-                        embeddedPicture,
-                        0,
-                        embeddedPicture.size
-                    )
-                }?: generateBitmapFromDrawable(context, R.drawable.default_music_thumbnail)
-
+                val audioImage = retriever.embeddedPicture
                 retriever.release()
-                MusicFile(
-                    title = title,
-                    artist = artist,
-                    album = album,
-                    duration = duration,
-                    path = path,
-                    previewImage = previewImage
-                )
+                BitmapFactory.decodeByteArray(audioImage, 0, audioImage?.size ?: 0)
             } catch (e: Exception) {
-                Log.e(TAG, "getMusicFile: $e")
+                Log.e(TAG, "getAlbumImage: $e")
                 null
             }
         }.await()
     }
 
-    fun generateBitmapFromDrawable(context: Context, @DrawableRes drawableResourceId: Int): Bitmap {
+    private lateinit var defaultThumbnail: Bitmap
+
+    fun getDefaultThumbnail(context: Context): Bitmap {
+        if(this::defaultThumbnail.isInitialized) return defaultThumbnail
+        defaultThumbnail = generateBitmapFromDrawable(context, R.drawable.default_music_thumbnail)
+        return defaultThumbnail
+    }
+
+    private fun generateBitmapFromDrawable(context: Context, @DrawableRes drawableResourceId: Int): Bitmap {
         val drawable = ContextCompat.getDrawable(context, drawableResourceId)
         drawable?.apply {
             val bitmap = Bitmap.createBitmap(

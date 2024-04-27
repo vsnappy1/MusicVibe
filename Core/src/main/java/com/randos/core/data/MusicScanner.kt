@@ -1,8 +1,14 @@
-package com.randos.musicvibe.data
+package com.randos.core.data
 
 import android.content.Context
 import android.provider.MediaStore
-import com.randos.musicvibe.utils.ApiLevelHelper
+import android.util.Log
+import androidx.media3.common.MediaItem
+import com.randos.core.data.model.MusicFile
+import com.randos.core.utils.ApiLevelHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * MusicScanner is a helper class which helps in getting audio files present on device.
@@ -11,16 +17,22 @@ import com.randos.musicvibe.utils.ApiLevelHelper
  */
 class MusicScanner(private val context: Context) {
 
-    private val audioFiles = mutableListOf<AudioFile>()
+    private val TAG = "MusicScanner"
+
+    val musicFiles = mutableListOf<MusicFile>()
+    val mediaItems = mutableListOf<MediaItem>()
+
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+            getAllMusicFiles()
+            getMediaItems()
+        }
+    }
 
     /**
-     * Find audio files present on device.
-     *
-     * @return The list of all audio files present on device.
+     * Find audio files present on device and inflates [musicFiles].
      */
-    fun getAllAudioFiles(): List<AudioFile> {
-
-        if (audioFiles.isNotEmpty()) return audioFiles
+    private fun getAllMusicFiles() {
 
         val projection = mutableListOf(
             MediaStore.Audio.Media._ID,
@@ -59,8 +71,10 @@ class MusicScanner(private val context: Context) {
                     cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM) ?: 0)
                 val duration =
                     cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION) ?: 0)
+                        .toLong()
                 val dateAdded =
                     cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED) ?: 0)
+                        .toLong()
 
                 /**
                  * The genre of the audio file can only be accessed in Api level 30 or above
@@ -70,25 +84,32 @@ class MusicScanner(private val context: Context) {
                 } else {
                     ""
                 }
-                val filePath =
+                val path =
                     cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA) ?: 0)
 
-                val audioFile = AudioFile(
-                    id,
-                    title,
-                    artist,
-                    album,
-                    duration,
-                    dateAdded,
-                    genre,
-                    filePath
+                val musicFile = MusicFile(
+                    id = id,
+                    title = title,
+                    artist = artist,
+                    album = album,
+                    duration = duration,
+                    path = path,
+                    dateAdded = dateAdded,
+                    genre = genre
                 )
-
-                audioFiles.add(audioFile)
+                musicFiles.add(musicFile)
             }
+            musicFiles.sortBy { it.title }
             cursor.close()
+            Log.d(TAG, "Media scanning completed. Items: ${musicFiles.size}")
         }
+    }
 
-        return audioFiles
+    /**
+     * Maps [MusicFile] to [MediaItem] for all items in [musicFiles] and store them in [mediaItems].
+     */
+    private fun getMediaItems() {
+        mediaItems.addAll(musicFiles.map { MediaItem.fromUri(it.path) })
+        Log.d(TAG, "Mapping to MediaItem completed. Items: ${mediaItems.size}")
     }
 }

@@ -1,6 +1,5 @@
 package com.randos.musicvibe.navigation
 
-import android.net.Uri
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
@@ -14,6 +13,9 @@ import com.randos.music_player.presentation.screen.music_player.MusicPlayerNavig
 import com.randos.musicvibe.presentation.screen.track.TrackScreen
 import com.randos.musicvibe.presentation.screen.track.TrackScreenNavigationDestination
 
+/**
+ * [MusicVibeNavHost] enables navigation in whole app.
+ */
 @Composable
 fun MusicVibeNavHost(navController: NavHostController) {
     NavHost(
@@ -23,9 +25,9 @@ fun MusicVibeNavHost(navController: NavHostController) {
 
         composable(TrackScreenNavigationDestination.route) {
             TrackScreen(
-                onItemClick = { path ->
+                onItemClick = { index ->
                     navController.navigate(
-                        route = "${MusicPlayerNavigationDestination.route}/${Uri.encode(path)}"
+                        route = "${MusicPlayerNavigationDestination.route}/$index"
                     )
                 }
             )
@@ -33,20 +35,17 @@ fun MusicVibeNavHost(navController: NavHostController) {
 
         composable(
             route = MusicPlayerNavigationDestination.routeWithParams,
-            arguments = listOf(navArgument(MusicPlayerNavigationDestination.argument) {
-                type = NavType.StringType
-            }),
+            /**
+             * This argument is directly used in viewmodel, so we don't need to pass it as an
+             * argument to [MusicPlayer] composable function.
+             */
+            arguments = listOf(navArgument(MusicPlayerNavigationDestination.param) { NavType.IntType }),
             enterTransition = { slideInVertically(initialOffsetY = { it }) },
             exitTransition = { slideOutVertically(targetOffsetY = { it }) },
             popEnterTransition = { slideInVertically(initialOffsetY = { it }) },
             popExitTransition = { slideOutVertically(targetOffsetY = { it }) }
-        ) { backStackEntry ->
-            val filePath =
-                backStackEntry.arguments?.getString(MusicPlayerNavigationDestination.argument)
-                    .orEmpty()
-            MusicPlayer(path = filePath)
+        ) {
+            MusicPlayer()
         }
-
-
     }
 }

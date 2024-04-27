@@ -10,22 +10,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.randos.musicvibe.data.MusicScanner
 import com.randos.musicvibe.navigation.MusicVibeNavHost
 import com.randos.musicvibe.presentation.theme.MusicVibeTheme
 import com.randos.musicvibe.utils.PermissionManager.checkPermission
 import com.randos.musicvibe.utils.PermissionManager.launchPermissionRequest
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject
-    lateinit var musicScanner: MusicScanner
-
     /*
-    TODO Enable repeat mode and shuffle mode
     TODO Implement service for playback in notification
     TODO Implement playback controller on lock screen
     TODO Create playback controller Widget

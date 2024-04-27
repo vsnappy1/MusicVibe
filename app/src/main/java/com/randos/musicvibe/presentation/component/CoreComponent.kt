@@ -44,31 +44,30 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.randos.core.data.model.MusicFile
 import com.randos.core.utils.Utils
 import com.randos.musicvibe.R
-import com.randos.musicvibe.data.AudioFile
-import com.randos.musicvibe.utils.IoUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-//--------------------------------------------------------------------------------------------------
+//--- Music Item -----------------------------------------------------------------------------------
 
 @Composable
 fun MusicItem(
     modifier: Modifier = Modifier,
-    audioFile: AudioFile,
+    musicFile: MusicFile,
     defaultMusicThumbnail: Bitmap,
-    onClick: (Bitmap) -> Unit
+    onClick: () -> Unit
 ) {
     var bitmap by remember { mutableStateOf(defaultMusicThumbnail) }
     LaunchedEffect(key1 = Unit) {
-        bitmap = IoUtils.getAlbumImage(audioFile.path) ?: defaultMusicThumbnail
+        bitmap = Utils.getAlbumImage(musicFile.path) ?: defaultMusicThumbnail
     }
 
     val rowModifier = remember {
         modifier
             .fillMaxWidth()
-            .clickable { onClick(bitmap) }
+            .clickable { onClick() }
     }
 
     Row(modifier = rowModifier) {
@@ -82,13 +81,13 @@ fun MusicItem(
         Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.height(75.dp)) {
             Text(
-                text = audioFile.title,
+                text = musicFile.title,
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = audioFile.artist,
+                text = musicFile.artist,
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -103,16 +102,13 @@ fun MusicItem(
 @Composable
 fun PreviewMusicItem() {
     MusicItem(
-        audioFile = AudioFile(1, "Title", "Artist", "Album", 100, 100, "Rock", ""),
-        defaultMusicThumbnail = Utils.generateBitmapFromDrawable(
-            LocalContext.current,
-            R.drawable.default_music_thumbnail
-        ),
+        musicFile = MusicFile(1, "Title", "Artist", "Album", 100, "", 100, "Rock"),
+        defaultMusicThumbnail = Utils.getDefaultThumbnail(LocalContext.current),
         onClick = {}
     )
 }
 
-//--------------------------------------------------------------------------------------------------
+//--- Alphabet Slider ------------------------------------------------------------------------------
 
 @Composable
 fun AlphabetSlider(
