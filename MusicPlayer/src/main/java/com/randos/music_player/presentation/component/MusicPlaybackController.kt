@@ -62,8 +62,8 @@ internal enum class RepeatMode {
  * @param isPreviousEnabled enable when previous item in playlist is available.
  */
 internal data class MusicPlaybackControllerState(
-    val isPlaying: Boolean = false,
-    val isShuffleOn: Boolean = false,
+    val isPlaying: Boolean = true,
+    val isShuffleOn: Boolean = true,
     val repeatMode: RepeatMode = RepeatMode.NONE,
     val seekPosition: Long = 0,
     val trackLength: Long = 100,

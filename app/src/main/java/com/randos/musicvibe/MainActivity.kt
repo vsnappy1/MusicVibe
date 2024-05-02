@@ -20,6 +20,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     /*
+    TODO preserve last selected shuffle and repeat mode.
     TODO Implement service for playback in notification
     TODO Implement playback controller on lock screen
     TODO Create playback controller Widget

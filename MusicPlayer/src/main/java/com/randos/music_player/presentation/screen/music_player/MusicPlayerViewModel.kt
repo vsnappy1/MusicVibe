@@ -13,6 +13,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.randos.core.data.MusicScanner
 import com.randos.music_player.presentation.component.RepeatMode
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -73,22 +74,68 @@ internal class MusicPlayerViewModel @Inject constructor(
     private fun preparePlayer() {
         exoPlayer.prepare()
         exoPlayer.addMediaItems(mediaItems)
-        exoPlayer.addListener(object : Player.Listener {
-            override fun onPositionDiscontinuity(
-                oldPosition: Player.PositionInfo,
-                newPosition: Player.PositionInfo,
-                reason: Int
-            ) {
+        exoPlayer.addListener(playerListener())
+    }
+
+    private fun playerListener() = object : Player.Listener {
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int
+        ) {
+            /**
+             * When currently playing song ends this method is invoked with
+             * [Player.DISCONTINUITY_REASON_AUTO_TRANSITION] reason, update the current track
+             * so that it matches the media being played.
+             */
+            /**
+             * When currently playing song ends this method is invoked with
+             * [Player.DISCONTINUITY_REASON_AUTO_TRANSITION] reason, update the current track
+             * so that it matches the media being played.
+             */
+            if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) {
+                updateCurrentTrack()
+            }
+        }
+
+        var updateIsPlayingJob: Job? = null
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            /**
+             * This method is invoked when the value of isPlaying() changes. When user move
+             * to the next or previous media item in the playlist there is brief pause and this
+             * method is invoked twice within 150ms first with [isPlaying] as false and then true
+             * and this caused some flickering in UI, therefore to smoothen the experience I have
+             * added this mechanism.
+             *
+             * Initially [updateIsPlayingJob] is not active, first time when this method is
+             * invoked either we get [isPlaying] as false and create the job as follow next
+             * this method is again invoked within 150ms then we cancel the existing job and
+             * create a new one so this rapid change does not propagate to UI.
+             */
+            if (updateIsPlayingJob?.isActive == true) {
+                updateIsPlayingJob?.cancel()
+            }
+            updateIsPlayingJob = viewModelScope.launch {
                 /**
-                 * When currently playing song ends this method is invoked with
-                 * [Player.DISCONTINUITY_REASON_AUTO_TRANSITION] reason, update the current track
-                 * so that it matches the media being played.
+                 * Based on my observation two consecutive method calls happens within 150ms so
+                 * to be on safe side I have added the 250ms delay.
                  */
-                if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) {
-                    updateCurrentTrack()
+                /**
+                 * Based on my observation two consecutive method calls happens within 150ms so
+                 * to be on safe side I have added the 250ms delay.
+                 */
+                delay(250)
+                _uiState.value?.apply {
+                    _uiState.postValue(
+                        this.copy(
+                            controllerState = controllerState.copy(
+                                isPlaying = isPlaying,
+                            )
+                        )
+                    )
                 }
             }
-        })
+        }
     }
 
     /**
@@ -107,29 +154,22 @@ internal class MusicPlayerViewModel @Inject constructor(
      * [ExoPlayer] plays a track this method gets details of this track and update the UI.
      */
     private fun updateCurrentTrack() {
-        viewModelScope.launch {
-            /**
-             * Added some delay so that [ExoPlayer] get stable before reading values from it.
-             */
-            delay(250)
-            _uiState.value?.apply {
-                val currentTrack = musicFiles[exoPlayer.currentMediaItemIndex]
-                _uiState.postValue(
-                    this.copy(
-                        index = index,
-                        currentTrack = currentTrack,
-                        controllerState = controllerState.copy(
-                            isPlaying = exoPlayer.isPlaying,
-                            isShuffleOn = exoPlayer.shuffleModeEnabled,
-                            repeatMode = getRepeatMode(exoPlayer.repeatMode),
-                            seekPosition = 0,
-                            trackLength = currentTrack.duration,
-                            isNextEnabled = exoPlayer.hasNextMediaItem(),
-                            isPreviousEnabled = exoPlayer.hasPreviousMediaItem()
-                        )
+        _uiState.value?.apply {
+            val currentTrack = musicFiles[exoPlayer.currentMediaItemIndex]
+            _uiState.postValue(
+                this.copy(
+                    index = index,
+                    currentTrack = currentTrack,
+                    controllerState = controllerState.copy(
+                        isShuffleOn = exoPlayer.shuffleModeEnabled,
+                        repeatMode = getRepeatMode(exoPlayer.repeatMode),
+                        seekPosition = 0,
+                        trackLength = currentTrack.duration,
+                        isNextEnabled = exoPlayer.hasNextMediaItem(),
+                        isPreviousEnabled = exoPlayer.hasPreviousMediaItem()
                     )
                 )
-            }
+            )
         }
     }
 
