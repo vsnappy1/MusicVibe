@@ -10,6 +10,7 @@ import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.exoplayer.ExoPlayer
+import com.randos.core.data.DataStoreManager
 import com.randos.core.data.MusicScanner
 import com.randos.music_player.presentation.component.RepeatMode
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,6 +23,7 @@ import javax.inject.Inject
 internal class MusicPlayerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     musicScanner: MusicScanner,
+    private val dataStore: DataStoreManager,
     private val exoPlayer: ExoPlayer
 ) : ViewModel() {
 
@@ -49,7 +51,11 @@ internal class MusicPlayerViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            preparePlayer()
+            /**
+             * Finish the preparePlayer job before executing other code, this ensures player is
+             * properly configured.
+             */
+            preparePlayerJob().join()
             initialTrackPlay(index)
             syncSeekPosition()
         }
@@ -71,10 +77,14 @@ internal class MusicPlayerViewModel @Inject constructor(
     /**
      * Prepare player for media playback.
      */
-    private fun preparePlayer() {
-        exoPlayer.prepare()
-        exoPlayer.addMediaItems(mediaItems)
-        exoPlayer.addListener(playerListener())
+    private fun preparePlayerJob(): Job {
+        return viewModelScope.launch {
+            exoPlayer.prepare()
+            exoPlayer.addMediaItems(mediaItems)
+            exoPlayer.addListener(playerListener())
+            setRepeatMode(dataStore.getRepeatMode())
+            setShuffleEnabled(dataStore.getShuffleEnabled())
+        }
     }
 
     private fun playerListener() = object : Player.Listener {
@@ -161,7 +171,7 @@ internal class MusicPlayerViewModel @Inject constructor(
                     index = index,
                     currentTrack = currentTrack,
                     controllerState = controllerState.copy(
-                        isShuffleOn = exoPlayer.shuffleModeEnabled,
+                        shuffleEnabled = exoPlayer.shuffleModeEnabled,
                         repeatMode = getRepeatMode(exoPlayer.repeatMode),
                         seekPosition = 0,
                         trackLength = currentTrack.duration,
@@ -198,10 +208,22 @@ internal class MusicPlayerViewModel @Inject constructor(
      * Disables the shuffle mode when enabled.
      */
     fun onShuffleClick() {
-        val shuffleModeEnabled = !exoPlayer.shuffleModeEnabled
-        exoPlayer.shuffleModeEnabled = shuffleModeEnabled
+        setShuffleEnabled(!exoPlayer.shuffleModeEnabled)
+    }
+
+    /**
+     * Set shuffleEnabled on [exoPlayer] and update the UI.
+     */
+    private fun setShuffleEnabled(shuffleEnabled: Boolean) {
+        exoPlayer.shuffleModeEnabled = shuffleEnabled
         _uiState.value?.apply {
-            _uiState.postValue(this.copy(controllerState = controllerState.copy(isShuffleOn = shuffleModeEnabled)))
+            _uiState.postValue(this.copy(controllerState = controllerState.copy(shuffleEnabled = shuffleEnabled)))
+        }
+        /**
+         * Store the shuffleEnabled into datastore.
+         */
+        viewModelScope.launch {
+            dataStore.setShuffleEnabled(shuffleEnabled)
         }
     }
 
@@ -215,6 +237,13 @@ internal class MusicPlayerViewModel @Inject constructor(
             REPEAT_MODE_ONE -> REPEAT_MODE_OFF
             else -> REPEAT_MODE_ALL
         }
+        setRepeatMode(repeatMode)
+    }
+
+    /**
+     * Set repeatMode on [exoPlayer] and update the UI.
+     */
+    private fun setRepeatMode(repeatMode: Int) {
         exoPlayer.repeatMode = repeatMode
         _uiState.value?.apply {
             _uiState.postValue(
@@ -224,6 +253,12 @@ internal class MusicPlayerViewModel @Inject constructor(
                     )
                 )
             )
+        }
+        /**
+         * Store the repeat mode into datastore.
+         */
+        viewModelScope.launch {
+            dataStore.setRepeatMode(repeatMode)
         }
     }
 

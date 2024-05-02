@@ -20,7 +20,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     /*
-    TODO preserve last selected shuffle and repeat mode.
+    TODO Add shared element transition from media item into media player.
     TODO Implement service for playback in notification
     TODO Implement playback controller on lock screen
     TODO Create playback controller Widget

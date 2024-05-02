@@ -41,20 +41,23 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.Player
 import com.randos.music_player.utils.toTime
 import kotlinx.coroutines.delay
 
 private const val TAG = "MusicPlayerController"
 
-internal enum class RepeatMode {
-    NONE, ONE, ALL
+internal enum class RepeatMode(val value: Int) {
+    NONE(Player.REPEAT_MODE_OFF),
+    ONE(Player.REPEAT_MODE_ONE),
+    ALL(Player.REPEAT_MODE_ALL)
 }
 
 /**
  * State holder class for [MusicPlaybackController]
  *
  * @param isPlaying Specifies if track is playing or is in pause state.
- * @param isShuffleOn Specifies if shuffle mode is enabled or disabled.
+ * @param shuffleEnabled Specifies if shuffle mode is enabled or disabled.
  * @param repeatMode Specifies the repeat mode [RepeatMode].
  * @param seekPosition It is current position of track play back in milliseconds.
  * @param trackLength It is the total length of track in milliseconds.
@@ -63,7 +66,7 @@ internal enum class RepeatMode {
  */
 internal data class MusicPlaybackControllerState(
     val isPlaying: Boolean = true,
-    val isShuffleOn: Boolean = true,
+    val shuffleEnabled: Boolean = true,
     val repeatMode: RepeatMode = RepeatMode.NONE,
     val seekPosition: Long = 0,
     val trackLength: Long = 100,
@@ -117,7 +120,7 @@ private fun MusicPlaybackButtons(
         PlaybackControllerIcon(
             imageVector = Icons.Rounded.Shuffle,
             contentDescription = "Shuffle",
-            tint = if (state.isShuffleOn) MaterialTheme.colorScheme.onBackground
+            tint = if (state.shuffleEnabled) MaterialTheme.colorScheme.onBackground
             else MaterialTheme.colorScheme.surfaceVariant,
             onClick = { onShuffleClick() },
         )
@@ -279,7 +282,7 @@ private fun SeekBar(
 private fun PreviewMusicPlayerController() {
     MusicPlaybackController(state = MusicPlaybackControllerState(
         isPlaying = false,
-        isShuffleOn = false,
+        shuffleEnabled = false,
         repeatMode = RepeatMode.NONE,
         seekPosition = 50,
         trackLength = 10000,
