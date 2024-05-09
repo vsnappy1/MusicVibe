@@ -1,13 +1,17 @@
 package com.randos.core.data
 
 import android.content.Context
+import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import com.randos.core.R
 import com.randos.core.data.model.MusicFile
 import com.randos.core.utils.ApiLevelHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -23,7 +27,11 @@ class MusicScanner(private val context: Context) {
     val mediaItems = mutableListOf<MediaItem>()
 
     init {
-        CoroutineScope(Dispatchers.IO).launch {
+        scan()
+    }
+
+    fun scan(): Job{
+        return CoroutineScope(Dispatchers.IO).launch {
             getAllMusicFiles()
             getMediaItems()
         }
@@ -41,7 +49,8 @@ class MusicScanner(private val context: Context) {
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.DURATION,
             MediaStore.Audio.Media.DATE_ADDED,
-            MediaStore.Audio.Media.DATA // Path to the file
+            MediaStore.Audio.Media.DATA, // Path to the file
+            MediaStore.Audio.Media.ALBUM_ID,
         )
 
         /**
@@ -95,7 +104,7 @@ class MusicScanner(private val context: Context) {
                     duration = duration,
                     path = path,
                     dateAdded = dateAdded,
-                    genre = genre
+                    genre = genre,
                 )
                 musicFiles.add(musicFile)
             }
@@ -109,7 +118,56 @@ class MusicScanner(private val context: Context) {
      * Maps [MusicFile] to [MediaItem] for all items in [musicFiles] and store them in [mediaItems].
      */
     private fun getMediaItems() {
-        mediaItems.addAll(musicFiles.map { MediaItem.fromUri(it.path) })
-        Log.d(TAG, "Mapping to MediaItem completed. Items: ${mediaItems.size}")
+        CoroutineScope(Dispatchers.Default).launch {
+            mediaItems.addAll(musicFiles.map {
+                MediaItem.Builder()
+                    .setMediaId("${it.id}")
+                    .setUri(it.path)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setArtist(it.artist)
+                            .setTitle(it.title)
+                            .setAlbumTitle(it.album)
+                            /**
+                             * When null is passed to setArtworkUri it automatically gets 
+                             * the artwork associated with media file, else it sets the 
+                             * provided uri.
+                             */
+//                            .setArtworkUri(getArtworkUri(it.albumId))
+                            .setGenre(it.genre)
+                            .build()
+                    )
+                    .build()
+            })
+            Log.d(TAG, "Mapping to MediaItem completed. Items: ${mediaItems.size}")
+        }
+    }
+
+    private val defaultArtworkUri =
+        Uri.parse("android.resource://com.randos.musicvibe/" + R.drawable.default_music_thumbnail)
+
+    /**
+     * Retrieve media metadata and if artwork is not present returns 
+     * [defaultArtworkUri] else returns null.
+     */
+    private fun getArtworkUri(albumId: Long): Uri? {
+        /**
+         * TODO the idea is to
+         */
+//        MediaMetadataRetriever().apply {
+//            setDataSource(path)
+//            if (embeddedPicture == null) return defaultArtworkUri
+//        }
+//        Log.d(TAG, "getArtworkUri: ${getAlbumArtUri(albumId)}")
+        getAlbumArtUri(albumId)
+        return null
+    }
+
+    fun getAlbumArtUri(albumId: Long): Uri {
+        val uri = Uri.parse("content://media/external/audio/albumart")
+        val u =  Uri.withAppendedPath(uri, albumId.toString())
+
+        u.path?.let { Log.d(TAG, "getAlbumArtUri: ${u.userInfo}") }
+        return u
     }
 }

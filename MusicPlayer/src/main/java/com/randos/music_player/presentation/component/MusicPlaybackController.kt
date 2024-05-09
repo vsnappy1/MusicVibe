@@ -67,11 +67,11 @@ internal enum class RepeatMode(val value: Int) {
 internal data class MusicPlaybackControllerState(
     val isPlaying: Boolean = true,
     val shuffleEnabled: Boolean = true,
-    val repeatMode: RepeatMode = RepeatMode.NONE,
+    val repeatMode: RepeatMode = RepeatMode.ALL,
     val seekPosition: Long = 0,
     val trackLength: Long = 100,
-    val isNextEnabled: Boolean = false,
-    val isPreviousEnabled: Boolean = false
+    val isNextEnabled: Boolean = true,
+    val isPreviousEnabled: Boolean = true
 )
 
 @Composable

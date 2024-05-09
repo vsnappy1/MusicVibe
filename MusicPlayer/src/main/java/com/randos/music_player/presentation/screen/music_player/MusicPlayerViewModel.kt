@@ -5,13 +5,16 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
 import com.randos.core.data.DataStoreManager
 import com.randos.core.data.MusicScanner
+import com.randos.music_player.utils.MusicVibeMediaController
 import com.randos.music_player.presentation.component.RepeatMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -23,8 +26,8 @@ import javax.inject.Inject
 internal class MusicPlayerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     musicScanner: MusicScanner,
+    musicVibeMediaController: MusicVibeMediaController,
     private val dataStore: DataStoreManager,
-    private val exoPlayer: ExoPlayer
 ) : ViewModel() {
 
     /**
@@ -49,15 +52,20 @@ internal class MusicPlayerViewModel @Inject constructor(
     )
     val uiState: LiveData<MusicPlayerState> = _uiState
 
+    private lateinit var mediaController: MediaController
+
     init {
-        viewModelScope.launch {
-            /**
-             * Finish the preparePlayer job before executing other code, this ensures player is
-             * properly configured.
-             */
-            preparePlayerJob().join()
-            initialTrackPlay(index)
-            syncSeekPosition()
+        musicVibeMediaController.mediaController?.let { mediaController ->
+            this.mediaController = mediaController
+            viewModelScope.launch {
+                setRepeatMode(dataStore.getRepeatMode())
+                setShuffleEnabled(dataStore.getShuffleEnabled())
+                mediaController.addListener(playerListener())
+                mediaController.seekTo(index, 0)
+                mediaController.play()
+                updateCurrentTrack()
+                syncSeekPosition()
+            }
         }
     }
 
@@ -69,43 +77,18 @@ internal class MusicPlayerViewModel @Inject constructor(
         viewModelScope.launch {
             while (true) {
                 delay(1000)
-                onSeekPositionChange(exoPlayer.currentPosition)
+                onSeekPositionChange(mediaController.currentPosition)
             }
-        }
-    }
-
-    /**
-     * Prepare player for media playback.
-     */
-    private fun preparePlayerJob(): Job {
-        return viewModelScope.launch {
-            exoPlayer.prepare()
-            exoPlayer.addMediaItems(mediaItems)
-            exoPlayer.addListener(playerListener())
-            setRepeatMode(dataStore.getRepeatMode())
-            setShuffleEnabled(dataStore.getShuffleEnabled())
         }
     }
 
     private fun playerListener() = object : Player.Listener {
-        override fun onPositionDiscontinuity(
-            oldPosition: Player.PositionInfo,
-            newPosition: Player.PositionInfo,
-            reason: Int
-        ) {
-            /**
-             * When currently playing song ends this method is invoked with
-             * [Player.DISCONTINUITY_REASON_AUTO_TRANSITION] reason, update the current track
-             * so that it matches the media being played.
-             */
-            /**
-             * When currently playing song ends this method is invoked with
-             * [Player.DISCONTINUITY_REASON_AUTO_TRANSITION] reason, update the current track
-             * so that it matches the media being played.
-             */
-            if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) {
-                updateCurrentTrack()
-            }
+
+        /**
+         * When media item is changed, update the UI accordingly.
+         */
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            updateCurrentTrack()
         }
 
         var updateIsPlayingJob: Job? = null
@@ -149,15 +132,6 @@ internal class MusicPlayerViewModel @Inject constructor(
     }
 
     /**
-     * Called when music player is first time launched.
-     */
-    private fun initialTrackPlay(index: Int) {
-        exoPlayer.seekTo(index, 0)
-        exoPlayer.play()
-        updateCurrentTrack()
-    }
-
-    /**
      * Update the UI based on current playing track, [MusicPlayerViewModel] is using [MusicScanner]
      * to get [musicFiles] and [mediaItems], these two are separate lists [mediaItems] are used by
      * [ExoPlayer] while [musicFiles] has the data associated with each media file.
@@ -165,18 +139,18 @@ internal class MusicPlayerViewModel @Inject constructor(
      */
     private fun updateCurrentTrack() {
         _uiState.value?.apply {
-            val currentTrack = musicFiles[exoPlayer.currentMediaItemIndex]
+            val currentTrack = musicFiles[mediaController.currentMediaItemIndex]
             _uiState.postValue(
                 this.copy(
                     index = index,
                     currentTrack = currentTrack,
                     controllerState = controllerState.copy(
-                        shuffleEnabled = exoPlayer.shuffleModeEnabled,
-                        repeatMode = getRepeatMode(exoPlayer.repeatMode),
+                        shuffleEnabled = mediaController.shuffleModeEnabled,
+                        repeatMode = getRepeatMode(mediaController.repeatMode),
                         seekPosition = 0,
                         trackLength = currentTrack.duration,
-                        isNextEnabled = exoPlayer.hasNextMediaItem(),
-                        isPreviousEnabled = exoPlayer.hasPreviousMediaItem()
+                        isNextEnabled = mediaController.hasNextMediaItem(),
+                        isPreviousEnabled = mediaController.hasPreviousMediaItem()
                     )
                 )
             )
@@ -189,12 +163,12 @@ internal class MusicPlayerViewModel @Inject constructor(
      * Pause music when is playing.
      */
     fun onPlayPauseClick() {
-        val isPlaying = exoPlayer.isPlaying
+        val isPlaying = mediaController.isPlaying
 
         if (isPlaying) {
-            exoPlayer.pause()
+            mediaController.pause()
         } else {
-            exoPlayer.play()
+            mediaController.play()
         }
 
         _uiState.value?.apply {
@@ -208,14 +182,14 @@ internal class MusicPlayerViewModel @Inject constructor(
      * Disables the shuffle mode when enabled.
      */
     fun onShuffleClick() {
-        setShuffleEnabled(!exoPlayer.shuffleModeEnabled)
+        setShuffleEnabled(!mediaController.shuffleModeEnabled)
     }
 
     /**
-     * Set shuffleEnabled on [exoPlayer] and update the UI.
+     * Set shuffleEnabled on [mediaController] and update the UI.
      */
     private fun setShuffleEnabled(shuffleEnabled: Boolean) {
-        exoPlayer.shuffleModeEnabled = shuffleEnabled
+        mediaController.shuffleModeEnabled = shuffleEnabled
         _uiState.value?.apply {
             _uiState.postValue(this.copy(controllerState = controllerState.copy(shuffleEnabled = shuffleEnabled)))
         }
@@ -231,7 +205,7 @@ internal class MusicPlayerViewModel @Inject constructor(
      * Updated the repeat mode each time invoked.
      */
     fun onRepeatModeClick() {
-        val repeatMode: Int = when (exoPlayer.repeatMode) {
+        val repeatMode: Int = when (mediaController.repeatMode) {
             REPEAT_MODE_OFF -> REPEAT_MODE_ALL
             REPEAT_MODE_ALL -> REPEAT_MODE_ONE
             REPEAT_MODE_ONE -> REPEAT_MODE_OFF
@@ -241,10 +215,10 @@ internal class MusicPlayerViewModel @Inject constructor(
     }
 
     /**
-     * Set repeatMode on [exoPlayer] and update the UI.
+     * Set repeatMode on [mediaController] and update the UI.
      */
     private fun setRepeatMode(repeatMode: Int) {
-        exoPlayer.repeatMode = repeatMode
+        mediaController.repeatMode = repeatMode
         _uiState.value?.apply {
             _uiState.postValue(
                 this.copy(
@@ -278,23 +252,21 @@ internal class MusicPlayerViewModel @Inject constructor(
      * Seek to the next media item available in playlist.
      */
     fun onNextClick() {
-        exoPlayer.seekToNextMediaItem()
-        updateCurrentTrack()
+        mediaController.seekToNextMediaItem()
     }
 
     /**
      * Seek to the previous item available in playlist.
      */
     fun onPreviousClick() {
-        exoPlayer.seekToPreviousMediaItem()
-        updateCurrentTrack()
+        mediaController.seekToPreviousMediaItem()
     }
 
     /**
      * Update the seek position of current media playback to [position].
      */
     fun onSeekPositionChangeFinished(position: Long) {
-        exoPlayer.seekTo(position)
+        mediaController.seekTo(position)
         onSeekPositionChange(position)
     }
 

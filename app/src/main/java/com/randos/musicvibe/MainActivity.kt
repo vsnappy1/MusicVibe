@@ -20,11 +20,13 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     /*
-    TODO Add shared element transition from media item into media player.
-    TODO Implement service for playback in notification
-    TODO Implement playback controller on lock screen
+    TODO Improve media player UI
     TODO Create playback controller Widget
     TODO Create Album Screen
+    TODO Implement BLE so music play back can be controlled via bluetooth device.
+    TODO Add shared element transition from media item into media player.
+    TODO Click on notification takes to app player
+    TODO Add repeat and shuffle in notification.
     ...
      */
 
@@ -57,7 +59,13 @@ class MainActivity : ComponentActivity() {
             permissionGranted = permissionGranted,
             permissionNotGranted = {
                 launchPermissionRequest(permission = permission,
-                    onPermissionGranted = permissionGranted,
+                    onPermissionGranted = {
+                        permissionGranted()
+                        /*
+                        Rescan storage since app just got the read permission.
+                         */
+                        (application as MusicVibeApplication).musicVibeMediaController.rescan()
+                    },
                     onPermissionDenied = {})
             },
             showEducationalUi = {}

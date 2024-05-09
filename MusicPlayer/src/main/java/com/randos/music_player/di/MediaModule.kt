@@ -1,31 +1,36 @@
 package com.randos.music_player.di
 
 import android.app.Application
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.C
-import androidx.media3.exoplayer.ExoPlayer
+import android.content.ComponentName
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import com.google.common.util.concurrent.ListenableFuture
+import com.randos.core.data.MusicScanner
+import com.randos.music_player.utils.MusicVibeMediaController
+import com.randos.music_player.service.MusicSessionService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
-import dagger.hilt.android.scopes.ViewModelScoped
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 class MediaModule {
 
-    /**
-     * Provides a singleton instance of ExoPlayer scoped to ViewModel.
-     * @param application The application context used to build ExoPlayer instance.
-     * @return A singleton instance of ExoPlayer.
-     */
     @Provides
-    @ViewModelScoped
-    fun provideExoPlayer(application: Application): ExoPlayer {
-        return ExoPlayer.Builder(application)
-            .setAudioAttributes(AudioAttributes.DEFAULT, true)
-            .setHandleAudioBecomingNoisy(true)
-            .setWakeMode(C.WAKE_MODE_LOCAL)
-            .build()
+    fun providesMediaController(application: Application): ListenableFuture<MediaController> {
+        val sessionToken =
+            SessionToken(application, ComponentName(application, MusicSessionService::class.java))
+        return MediaController.Builder(application, sessionToken).buildAsync()
+    }
+
+    @Provides
+    @Singleton
+    fun provideMusicVibeMediaController(
+        mediaControllerFuture: ListenableFuture<MediaController>,
+        musicScanner: MusicScanner,
+    ): MusicVibeMediaController {
+        return MusicVibeMediaController(mediaControllerFuture, musicScanner)
     }
 }
