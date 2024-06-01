@@ -2,10 +2,12 @@ package com.randos.music_player.di
 
 import android.app.Application
 import android.content.ComponentName
+import android.graphics.Bitmap
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import com.randos.core.data.MusicScanner
+import com.randos.core.utils.Utils
 import com.randos.music_player.utils.MusicVibeMediaController
 import com.randos.music_player.service.MusicSessionService
 import dagger.Module
@@ -33,4 +35,11 @@ class MediaModule {
     ): MusicVibeMediaController {
         return MusicVibeMediaController(mediaControllerFuture, musicScanner)
     }
+
+    @Provides
+    @Singleton
+    fun provideDefaultThumbnail(application: Application): Bitmap {
+        return Utils.getDefaultThumbnail(application)
+    }
+
 }

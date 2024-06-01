@@ -23,6 +23,7 @@ import com.randos.core.data.MusicScanner
 import com.randos.core.data.model.MusicFile
 import com.randos.core.navigation.NavigationDestination
 import com.randos.core.utils.Utils
+import com.randos.core.utils.defaultPadding
 import com.randos.music_player.presentation.screen.music_player.MusicPlayer
 import com.randos.musicvibe.presentation.component.AlphabetSlider
 import com.randos.musicvibe.presentation.component.MusicItem
@@ -58,7 +59,7 @@ fun TrackScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .defaultPadding(),
         contentAlignment = Alignment.Center
     ) {
         LazyColumn(

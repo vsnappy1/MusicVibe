@@ -1,10 +1,12 @@
 package com.randos.music_player.presentation.screen.music_player
 
+import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.palette.graphics.Palette
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Player.REPEAT_MODE_ALL
@@ -14,19 +16,24 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaController
 import com.randos.core.data.DataStoreManager
 import com.randos.core.data.MusicScanner
+import com.randos.core.presentation.theme.seed
+import com.randos.core.utils.Utils
 import com.randos.music_player.utils.MusicVibeMediaController
 import com.randos.music_player.presentation.component.RepeatMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
 
 @HiltViewModel
 internal class MusicPlayerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     musicScanner: MusicScanner,
     musicVibeMediaController: MusicVibeMediaController,
+    private val defaultThumbnail: Bitmap,
     private val dataStore: DataStoreManager,
 ) : ViewModel() {
 
@@ -64,22 +71,45 @@ internal class MusicPlayerViewModel @Inject constructor(
                 mediaController.seekTo(index, 0)
                 mediaController.play()
                 updateCurrentTrack()
-                syncSeekPosition()
             }
         }
     }
 
     /**
-     * Update the seek position and keep it in sync with [ExoPlayer], so that user can see accurate
-     * UI.
+     * Update the seek position and keep it in sync with [MediaController], so that user can see
+     * accurate UI.
      */
-    private fun syncSeekPosition() {
-        viewModelScope.launch {
-            while (true) {
-                delay(1000)
-                onSeekPositionChange(mediaController.currentPosition)
+    private var playbackSyncJob: Job? = null
+    private fun startPlaybackSync() {
+        /*
+         * Some times this method is invoked multiple times in a short span, to ensure there are not
+         * multiple same job (memory leak) cancel the job and then start again.
+         */
+        stopPlaybackSync()
+        playbackSyncJob = viewModelScope.launch {
+            while (isActive) {
+                delay(100) // 30 FPS
+                _uiState.value?.apply {
+                    onSeekPositionChange(mediaController.currentPosition)
+                }
             }
         }
+    }
+
+    /**
+     * Stop the playback seek sync.
+     */
+    private fun stopPlaybackSync() {
+        playbackSyncJob?.cancel()
+    }
+
+    /**
+     * Pause the playback sync for a while, this is useful in situations when want to free up
+     * coroutine and perform some other task as playback sync is cpu intensive task.
+     */
+    private fun pausePlaybackSyncBriefly() {
+        stopPlaybackSync()
+        startPlaybackSync()
     }
 
     private fun playerListener() = object : Player.Listener {
@@ -93,6 +123,14 @@ internal class MusicPlayerViewModel @Inject constructor(
 
         var updateIsPlayingJob: Job? = null
         override fun onIsPlayingChanged(isPlaying: Boolean) {
+            /**
+             * Stop the playback sync when playback is stopped as we don't want to unnecessary CPU
+             * usage.
+             */
+            if (!isPlaying) {
+                stopPlaybackSync()
+            }
+
             /**
              * This method is invoked when the value of isPlaying() changes. When user move
              * to the next or previous media item in the playlist there is brief pause and this
@@ -113,10 +151,6 @@ internal class MusicPlayerViewModel @Inject constructor(
                  * Based on my observation two consecutive method calls happens within 150ms so
                  * to be on safe side I have added the 250ms delay.
                  */
-                /**
-                 * Based on my observation two consecutive method calls happens within 150ms so
-                 * to be on safe side I have added the 250ms delay.
-                 */
                 delay(250)
                 _uiState.value?.apply {
                     _uiState.postValue(
@@ -126,6 +160,14 @@ internal class MusicPlayerViewModel @Inject constructor(
                             )
                         )
                     )
+                }
+                if (isPlaying) {
+                    /**
+                     * Add some delay before starting seek sync (as it is very intensive), so player
+                     * can have enough time to load thumbnail, extract color and update the UI.
+                     */
+                    delay(500)
+                    startPlaybackSync()
                 }
             }
         }
@@ -154,6 +196,42 @@ internal class MusicPlayerViewModel @Inject constructor(
                     )
                 )
             )
+            setupThumbnailAndBackground(currentTrack.path)
+        }
+    }
+
+    /**
+     * Extract the thumbnail associated with media item also generate muted color using thumbnail
+     * for background color.
+     */
+    private fun setupThumbnailAndBackground(path: String) {
+        viewModelScope.launch {
+            val bitmap = Utils.getAlbumImage(path)
+            if (bitmap != null) {
+                Palette.from(bitmap).generate { palette ->
+                    val color = palette?.getMutedColor(seed.value.toInt())
+                    _uiState.value?.apply {
+                        _uiState.postValue(
+                            this.copy(
+                                backgroundColor = color,
+                                bitmap = bitmap
+                            )
+                        )
+                    }
+                }
+            } else {
+                /*
+                If media does not have any thumbnail associated with it use defaultThumbnail.
+                 */
+                _uiState.value?.apply {
+                    _uiState.postValue(
+                        this.copy(
+                            backgroundColor = null,
+                            bitmap = defaultThumbnail
+                        )
+                    )
+                }
+            }
         }
     }
 
@@ -182,6 +260,7 @@ internal class MusicPlayerViewModel @Inject constructor(
      * Disables the shuffle mode when enabled.
      */
     fun onShuffleClick() {
+        pausePlaybackSyncBriefly()
         setShuffleEnabled(!mediaController.shuffleModeEnabled)
     }
 
@@ -189,10 +268,10 @@ internal class MusicPlayerViewModel @Inject constructor(
      * Set shuffleEnabled on [mediaController] and update the UI.
      */
     private fun setShuffleEnabled(shuffleEnabled: Boolean) {
-        mediaController.shuffleModeEnabled = shuffleEnabled
         _uiState.value?.apply {
             _uiState.postValue(this.copy(controllerState = controllerState.copy(shuffleEnabled = shuffleEnabled)))
         }
+        mediaController.shuffleModeEnabled = shuffleEnabled
         /**
          * Store the shuffleEnabled into datastore.
          */
@@ -205,6 +284,7 @@ internal class MusicPlayerViewModel @Inject constructor(
      * Updated the repeat mode each time invoked.
      */
     fun onRepeatModeClick() {
+        pausePlaybackSyncBriefly()
         val repeatMode: Int = when (mediaController.repeatMode) {
             REPEAT_MODE_OFF -> REPEAT_MODE_ALL
             REPEAT_MODE_ALL -> REPEAT_MODE_ONE
@@ -218,7 +298,6 @@ internal class MusicPlayerViewModel @Inject constructor(
      * Set repeatMode on [mediaController] and update the UI.
      */
     private fun setRepeatMode(repeatMode: Int) {
-        mediaController.repeatMode = repeatMode
         _uiState.value?.apply {
             _uiState.postValue(
                 this.copy(
@@ -228,6 +307,7 @@ internal class MusicPlayerViewModel @Inject constructor(
                 )
             )
         }
+        mediaController.repeatMode = repeatMode
         /**
          * Store the repeat mode into datastore.
          */

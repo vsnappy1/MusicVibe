@@ -45,7 +45,7 @@ fun MusicVibeNavHost(navController: NavHostController) {
             popEnterTransition = { slideInVertically(initialOffsetY = { it }) },
             popExitTransition = { slideOutVertically(targetOffsetY = { it }) }
         ) {
-            MusicPlayer()
+            MusicPlayer(onBack = {navController.popBackStack()})
         }
     }
 }

@@ -1,7 +1,5 @@
 package com.randos.music_player.presentation.component
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -9,11 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -23,6 +19,7 @@ import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,15 +30,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
+import com.randos.core.presentation.component.BouncyComposable
 import com.randos.music_player.utils.toTime
 import kotlinx.coroutines.delay
 
@@ -121,7 +117,7 @@ private fun MusicPlaybackButtons(
             imageVector = Icons.Rounded.Shuffle,
             contentDescription = "Shuffle",
             tint = if (state.shuffleEnabled) MaterialTheme.colorScheme.onBackground
-            else MaterialTheme.colorScheme.surfaceVariant,
+            else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f),
             onClick = { onShuffleClick() },
         )
         PlaybackControllerIcon(
@@ -146,7 +142,7 @@ private fun MusicPlaybackButtons(
         PlaybackControllerIcon(
             imageVector = if (state.repeatMode == RepeatMode.ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
             contentDescription = "Repeat Mode",
-            tint = if (state.repeatMode == RepeatMode.NONE) MaterialTheme.colorScheme.surfaceVariant
+            tint = if (state.repeatMode == RepeatMode.NONE) MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f)
             else MaterialTheme.colorScheme.onBackground,
             onClick = { onRepeatModeClick() }
         )
@@ -159,40 +155,22 @@ private fun PlaybackControllerIcon(
     imageVector: ImageVector,
     contentDescription: String,
     tint: Color = MaterialTheme.colorScheme.onBackground,
-    size: Dp = 40.dp,
+    size: Dp = 30.dp,
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
 
-    /**
-     * Creates animation effect when clicked for more appealing UX.
-     */
-    var isClicked by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        targetValue = if (isClicked) 0.75f else 1.0f,
-        label = "PlaybackController"
-    )
-    Box(modifier = modifier
-        .scale(scale)
-        .size(size)
-        .clip(CircleShape)
-        .clickable(enabled) {
-            onClick()
-            isClicked = true
-        }) {
+    BouncyComposable(
+        modifier = modifier.padding(8.dp),
+        clickEnabled = enabled,
+        onClick = onClick) {
         Icon(
             imageVector = imageVector,
             contentDescription = contentDescription,
-            tint = if (enabled) tint else MaterialTheme.colorScheme.surfaceVariant,
+            tint = if (enabled) tint else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f),
             modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp)
+                .size(size)
         )
-    }
-
-    LaunchedEffect(key1 = isClicked) {
-        delay(100)
-        isClicked = false
     }
 }
 
@@ -256,6 +234,10 @@ private fun SeekBar(
             onValueChangeFinished = {
                 onValueChangeFinished(seek.toLong())
             },
+            colors = SliderDefaults.colors().copy(
+                thumbColor = MaterialTheme.colorScheme.onBackground,
+                activeTrackColor = MaterialTheme.colorScheme.onBackground,
+                inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f)),
             interactionSource = mutableInteractionSource
         )
         Row(
