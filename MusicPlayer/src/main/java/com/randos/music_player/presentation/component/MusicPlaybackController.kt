@@ -41,9 +41,7 @@ import com.randos.core.presentation.component.BouncyComposable
 import com.randos.music_player.utils.toTime
 import kotlinx.coroutines.delay
 
-private const val TAG = "MusicPlayerController"
-
-internal enum class RepeatMode(val value: Int) {
+enum class RepeatMode(val value: Int) {
     NONE(Player.REPEAT_MODE_OFF),
     ONE(Player.REPEAT_MODE_ONE),
     ALL(Player.REPEAT_MODE_ALL)
@@ -60,8 +58,8 @@ internal enum class RepeatMode(val value: Int) {
  * @param isNextEnabled enable when next item in playlist is available.
  * @param isPreviousEnabled enable when previous item in playlist is available.
  */
-internal data class MusicPlaybackControllerState(
-    val isPlaying: Boolean = true,
+data class MusicPlaybackControllerState(
+    val isPlaying: Boolean = false,
     val shuffleEnabled: Boolean = true,
     val repeatMode: RepeatMode = RepeatMode.ALL,
     val seekPosition: Long = 0,
@@ -145,6 +143,41 @@ private fun MusicPlaybackButtons(
             tint = if (state.repeatMode == RepeatMode.NONE) MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f)
             else MaterialTheme.colorScheme.onBackground,
             onClick = { onRepeatModeClick() }
+        )
+    }
+}
+
+@Composable
+fun MusicPlaybackButtons(
+    modifier: Modifier = Modifier,
+    state: MusicPlaybackControllerState,
+    onPlayPauseClick: () -> Unit,
+    onNextClick: () -> Unit,
+    onPreviousClick: () -> Unit
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        PlaybackControllerIcon(
+            imageVector = Icons.Rounded.PlayArrow,
+            contentDescription = "Play Previous Track",
+            enabled = state.isPreviousEnabled,
+            modifier = Modifier.rotate(180f),
+            onClick = { onPreviousClick() }
+        )
+        PlaybackControllerIcon(
+            imageVector = if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+            contentDescription = "Play/Pause",
+            size = 40.dp,
+            onClick = { onPlayPauseClick() }
+        )
+        PlaybackControllerIcon(
+            imageVector = Icons.Rounded.PlayArrow,
+            contentDescription = "Play Next Track",
+            enabled = state.isNextEnabled,
+            onClick = { onNextClick() }
         )
     }
 }

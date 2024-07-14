@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
+import com.randos.core.data.DataStoreManager
 import com.randos.core.data.MusicScanner
 import com.randos.core.utils.Utils
 import com.randos.music_player.utils.MusicVibeMediaController
@@ -32,8 +33,10 @@ class MediaModule {
     fun provideMusicVibeMediaController(
         mediaControllerFuture: ListenableFuture<MediaController>,
         musicScanner: MusicScanner,
+        dataStore: DataStoreManager,
+        defaultThumbnail: Bitmap,
     ): MusicVibeMediaController {
-        return MusicVibeMediaController(mediaControllerFuture, musicScanner)
+        return MusicVibeMediaController(mediaControllerFuture, musicScanner, dataStore, defaultThumbnail)
     }
 
     @Provides
@@ -41,5 +44,4 @@ class MediaModule {
     fun provideDefaultThumbnail(application: Application): Bitmap {
         return Utils.getDefaultThumbnail(application)
     }
-
 }

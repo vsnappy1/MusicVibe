@@ -4,10 +4,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.randos.music_player.presentation.screen.music_player.MusicPlayer
 import com.randos.music_player.presentation.screen.music_player.MusicPlayerNavigationDestination
 import com.randos.musicvibe.presentation.screen.track.TrackScreen
@@ -25,21 +23,16 @@ fun MusicVibeNavHost(navController: NavHostController) {
 
         composable(TrackScreenNavigationDestination.route) {
             TrackScreen(
-                onItemClick = { index ->
+                onBottomPlayerClick = {
                     navController.navigate(
-                        route = "${MusicPlayerNavigationDestination.route}/$index"
+                        route = MusicPlayerNavigationDestination.route
                     )
                 }
             )
         }
 
         composable(
-            route = MusicPlayerNavigationDestination.routeWithParams,
-            /**
-             * This argument is directly used in viewmodel, so we don't need to pass it as an
-             * argument to [MusicPlayer] composable function.
-             */
-            arguments = listOf(navArgument(MusicPlayerNavigationDestination.param) { NavType.IntType }),
+            route = MusicPlayerNavigationDestination.route,
             enterTransition = { slideInVertically(initialOffsetY = { it }) },
             exitTransition = { slideOutVertically(targetOffsetY = { it }) },
             popEnterTransition = { slideInVertically(initialOffsetY = { it }) },

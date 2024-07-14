@@ -92,6 +92,7 @@ dependencies {
 
     // --- Glide ---
     implementation (libs.glide.compose)
+    implementation(project(":logger"))
 
     // --- Kapt ---
     kaptAndroidTest (libs.hilt.compiler)

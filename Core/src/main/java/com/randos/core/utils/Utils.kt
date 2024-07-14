@@ -5,16 +5,14 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.media.MediaMetadataRetriever
-import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import com.randos.core.R
+import com.randos.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlin.coroutines.coroutineContext
-
-private const val TAG = "Utils"
 
 object Utils {
 
@@ -31,7 +29,7 @@ object Utils {
                 retriever.release()
                 BitmapFactory.decodeByteArray(audioImage, 0, audioImage?.size ?: 0)
             } catch (e: Exception) {
-                Log.e(TAG, "getAlbumImage: $e")
+                Logger.e(this@Utils, "Failed to get thumbnail for music file at path: $path", e)
                 null
             }
         }.await()

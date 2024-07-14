@@ -1,14 +1,12 @@
 package com.randos.core.data
 
 import android.content.Context
-import android.net.Uri
 import android.provider.MediaStore
-import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import com.randos.core.R
 import com.randos.core.data.model.MusicFile
 import com.randos.core.utils.ApiLevelHelper
+import com.randos.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,8 +19,6 @@ import kotlinx.coroutines.launch
  */
 class MusicScanner(private val context: Context) {
 
-    private val TAG = "MusicScanner"
-
     val musicFiles = mutableListOf<MusicFile>()
     val mediaItems = mutableListOf<MediaItem>()
 
@@ -30,7 +26,7 @@ class MusicScanner(private val context: Context) {
         scan()
     }
 
-    fun scan(): Job{
+    fun scan(): Job {
         return CoroutineScope(Dispatchers.IO).launch {
             getAllMusicFiles()
             getMediaItems()
@@ -70,47 +66,50 @@ class MusicScanner(private val context: Context) {
 
         if (cursor != null) {
             while (cursor.moveToNext()) {
-                val id =
-                    cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media._ID) ?: 0)
-                val title =
-                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE) ?: 0)
-                val artist =
-                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST) ?: 0)
-                val album =
-                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM) ?: 0)
-                val duration =
-                    cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION) ?: 0)
-                        .toLong()
-                val dateAdded =
-                    cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED) ?: 0)
-                        .toLong()
+                cursor.apply {
+                    val idColumnIndex = getColumnIndex(MediaStore.Audio.Media._ID)
+                    val titleColumnIndex = getColumnIndex(MediaStore.Audio.Media.TITLE)
+                    val artistColumnIndex = getColumnIndex(MediaStore.Audio.Media.ARTIST)
+                    val albumColumIndex = getColumnIndex(MediaStore.Audio.Media.ALBUM)
+                    val durationColumIndex = getColumnIndex(MediaStore.Audio.Media.DURATION)
+                    val dateAddedColumnIndex = getColumnIndex(MediaStore.Audio.Media.DATE_ADDED)
+                    val dataColumIndex = getColumnIndex(MediaStore.Audio.Media.DATA)
 
-                /**
-                 * The genre of the audio file can only be accessed in Api level 30 or above
-                 */
-                val genre = if (ApiLevelHelper.isApiLevel30OrAbove()) {
-                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.GENRE) ?: 0)
-                } else {
-                    ""
+                    val id = getLong(idColumnIndex)
+                    val title = getString(titleColumnIndex)
+                    val artist = getString(artistColumnIndex)
+                    val album = getString(albumColumIndex)
+                    val duration = getInt(durationColumIndex).toLong()
+                    val path = getString(dataColumIndex)
+                    val dateAdded = getInt(dateAddedColumnIndex).toLong()
+
+                    /**
+                     * The genre of the audio file can only be accessed in Api level 30 or above
+                     */
+                    val genre = if (ApiLevelHelper.isApiLevel30OrAbove()) {
+                        val genreColumnIndex = getColumnIndex(MediaStore.Audio.Media.GENRE)
+                        getString(genreColumnIndex)
+                    } else {
+                        ""
+                    }
+
+                    val musicFile = MusicFile(
+                        id = id,
+                        title = title,
+                        artist = artist,
+                        album = album,
+                        duration = duration,
+                        path = path,
+                        dateAdded = dateAdded,
+                        genre = genre,
+                    )
+                    musicFiles.add(musicFile)
                 }
-                val path =
-                    cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA) ?: 0)
 
-                val musicFile = MusicFile(
-                    id = id,
-                    title = title,
-                    artist = artist,
-                    album = album,
-                    duration = duration,
-                    path = path,
-                    dateAdded = dateAdded,
-                    genre = genre,
-                )
-                musicFiles.add(musicFile)
             }
             musicFiles.sortBy { it.title }
             cursor.close()
-            Log.d(TAG, "Media scanning completed. Items: ${musicFiles.size}")
+            Logger.i(this@MusicScanner, "Media scanning completed. Items: ${musicFiles.size}")
         }
     }
 
@@ -129,8 +128,8 @@ class MusicScanner(private val context: Context) {
                             .setTitle(it.title)
                             .setAlbumTitle(it.album)
                             /**
-                             * When null is passed to setArtworkUri it automatically gets 
-                             * the artwork associated with media file, else it sets the 
+                             * When null is passed to setArtworkUri it automatically gets
+                             * the artwork associated with media file, else it sets the
                              * provided uri.
                              */
 //                            .setArtworkUri(getArtworkUri(it.albumId))
@@ -139,35 +138,7 @@ class MusicScanner(private val context: Context) {
                     )
                     .build()
             })
-            Log.d(TAG, "Mapping to MediaItem completed. Items: ${mediaItems.size}")
+            Logger.i(this@MusicScanner, "Mapping to MediaItem completed. Items: ${mediaItems.size}")
         }
-    }
-
-    private val defaultArtworkUri =
-        Uri.parse("android.resource://com.randos.musicvibe/" + R.drawable.default_music_thumbnail)
-
-    /**
-     * Retrieve media metadata and if artwork is not present returns 
-     * [defaultArtworkUri] else returns null.
-     */
-    private fun getArtworkUri(albumId: Long): Uri? {
-        /**
-         * TODO the idea is to
-         */
-//        MediaMetadataRetriever().apply {
-//            setDataSource(path)
-//            if (embeddedPicture == null) return defaultArtworkUri
-//        }
-//        Log.d(TAG, "getArtworkUri: ${getAlbumArtUri(albumId)}")
-        getAlbumArtUri(albumId)
-        return null
-    }
-
-    fun getAlbumArtUri(albumId: Long): Uri {
-        val uri = Uri.parse("content://media/external/audio/albumart")
-        val u =  Uri.withAppendedPath(uri, albumId.toString())
-
-        u.path?.let { Log.d(TAG, "getAlbumArtUri: ${u.userInfo}") }
-        return u
     }
 }

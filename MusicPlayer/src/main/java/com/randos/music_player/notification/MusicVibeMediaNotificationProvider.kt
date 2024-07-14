@@ -2,7 +2,6 @@ package com.randos.music_player.notification
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import androidx.annotation.OptIn
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -18,8 +17,6 @@ import androidx.media3.session.SessionCommand
 import com.google.common.collect.ImmutableList
 import com.randos.musicplayer.R
 import java.util.Arrays
-
-private const val TAG = "MusicVibeMediaNotificat"
 
 /**
  * Custom notification provider, it has five action buttons:
@@ -121,7 +118,6 @@ class MusicVibeMediaNotificationProvider(private val context: Context) :
         customLayout: ImmutableList<CommandButton>,
         showPauseButton: Boolean
     ): ImmutableList<CommandButton> {
-        Log.d(TAG, "getMediaButtons: ")
         return getMediaButtonss(session, playerCommands, customLayout, showPauseButton)
     }
 

@@ -24,7 +24,6 @@ class MainActivity : ComponentActivity() {
 
     /*
     TODO Click on notification takes to app player
-    TODO Add Player preview at the bottom of track view
     TODO implement room database to improve performance for read media
     TODO implement broadcast receiver and a service to listen to storage changes
     TODO add get info about track and share media option in menu options

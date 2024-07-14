@@ -44,7 +44,7 @@ class MusicSessionService : MediaSessionService() {
     }
 
     /**
-     * Release please and media session in onDestroy.
+     * Release player and media session in onDestroy.
      */
     override fun onDestroy() {
         mediaSession?.run {

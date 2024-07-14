@@ -67,6 +67,7 @@ fun MusicItem(
     val rowModifier = remember {
         modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 8.dp))
             .clickable { onClick() }
     }
 
@@ -149,6 +150,8 @@ fun AlphabetSlider(
 
         Column(
             modifier = Modifier
+                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), CircleShape)
+                .padding(horizontal = 1.dp)
                 .onGloballyPositioned { coordinate ->
                     heightOfSingleItem = coordinate.size.height / alphabets.size
                 }

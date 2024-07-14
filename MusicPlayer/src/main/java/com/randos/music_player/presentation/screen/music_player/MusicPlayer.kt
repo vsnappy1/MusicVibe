@@ -16,13 +16,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Circle
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,7 +29,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,12 +44,9 @@ import androidx.media3.common.util.UnstableApi
 import com.randos.core.data.model.MusicFile
 import com.randos.core.navigation.NavigationDestinationWithParams
 import com.randos.core.presentation.component.BouncyComposable
-import com.randos.core.presentation.theme.seed
 import com.randos.core.utils.defaultPadding
 import com.randos.music_player.presentation.component.MusicPlaybackController
 import com.randos.music_player.presentation.component.MusicPlaybackControllerState
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 object MusicPlayerNavigationDestination : NavigationDestinationWithParams {
     override val name: String = "Music Player"
@@ -60,7 +55,7 @@ object MusicPlayerNavigationDestination : NavigationDestinationWithParams {
 }
 
 @Immutable
-internal data class MusicPlayerState(
+data class MusicPlayerState(
     val index: Int = 0,
     val bitmap: Bitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888),
     val backgroundColor: Int? = null,
@@ -76,9 +71,10 @@ fun MusicPlayer(
     val viewModel: MusicPlayerViewModel = hiltViewModel()
     val state by viewModel.uiState.observeAsState(MusicPlayerState())
 
+    val backgroundColor = state.backgroundColor?.let { Color(it) } ?: MaterialTheme.colorScheme.background
     Box(
         modifier = Modifier
-            .background(gradientBackgroundColor(state.backgroundColor))
+            .background(gradientBackgroundColor(backgroundColor))
             .fillMaxSize()
             .defaultPadding(top = 48.dp, bottom = 64.dp)
     ) {
@@ -125,20 +121,15 @@ private fun OptionMenu() {
 private fun BackButton(
     onBack: () -> Unit
 ) {
-    val coroutineScope = rememberCoroutineScope()
 
     BouncyComposable(onClick = {
-        coroutineScope.launch {
-            delay(200)
-            onBack()
-        }
+        onBack()
     }) {
         Icon(
-            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+            imageVector = Icons.Rounded.KeyboardArrowDown,
             contentDescription = "Arrow back",
             modifier = Modifier
                 .size(32.dp)
-                .padding(4.dp)
         )
     }
 }
@@ -147,9 +138,9 @@ private fun BackButton(
  * Uses muted color from media thumbnail create vertical gradient background color.
  */
 @Composable
-private fun gradientBackgroundColor(backgroundColor: Int?): Brush {
+private fun gradientBackgroundColor(backgroundColor: Color): Brush {
     val color by animateColorAsState(
-        targetValue = if (backgroundColor != null) Color(backgroundColor) else seed,
+        targetValue = backgroundColor,
         animationSpec = tween(durationMillis = 500), label = "Music player background animation"
     )
 

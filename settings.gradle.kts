@@ -23,3 +23,4 @@ rootProject.name = "MusicVibe"
 include(":app")
 include(":MusicPlayer")
 include(":Core")
+include(":logger")
