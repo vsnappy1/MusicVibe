@@ -1,5 +1,8 @@
 package com.randos.music_player.presentation.component
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -8,18 +11,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,10 +36,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import com.randos.core.presentation.component.BouncyComposable
@@ -140,7 +150,9 @@ private fun MusicPlaybackButtons(
         PlaybackControllerIcon(
             imageVector = if (state.repeatMode == RepeatMode.ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
             contentDescription = "Repeat Mode",
-            tint = if (state.repeatMode == RepeatMode.NONE) MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f)
+            tint = if (state.repeatMode == RepeatMode.NONE) MaterialTheme.colorScheme.onBackground.copy(
+                alpha = 0.25f
+            )
             else MaterialTheme.colorScheme.onBackground,
             onClick = { onRepeatModeClick() }
         )
@@ -196,7 +208,8 @@ private fun PlaybackControllerIcon(
     BouncyComposable(
         modifier = modifier.padding(8.dp),
         clickEnabled = enabled,
-        onClick = onClick) {
+        onClick = onClick
+    ) {
         Icon(
             imageVector = imageVector,
             contentDescription = contentDescription,
@@ -207,6 +220,7 @@ private fun PlaybackControllerIcon(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SeekBar(
     seekPosition: Long,
@@ -257,6 +271,9 @@ private fun SeekBar(
      */
     var seek by remember { mutableFloatStateOf(seekPosition.toFloat()) }
     val sliderValue = if (isUserInteracting) seek else seekPosition.toFloat()
+    val trackHeight by animateDpAsState(
+        targetValue = if (isUserInteracting) 15.dp else 5.dp,
+    )
 
     Box(modifier = Modifier) {
         Slider(
@@ -267,11 +284,23 @@ private fun SeekBar(
             onValueChangeFinished = {
                 onValueChangeFinished(seek.toLong())
             },
-            colors = SliderDefaults.colors().copy(
-                thumbColor = MaterialTheme.colorScheme.onBackground,
-                activeTrackColor = MaterialTheme.colorScheme.onBackground,
-                inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f)),
-            interactionSource = mutableInteractionSource
+            interactionSource = mutableInteractionSource,
+            thumb = {
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .scale(0.72f)
+                        .background(MaterialTheme.colorScheme.onBackground, CircleShape)
+                )
+            },
+            track = {
+                Track(
+                    trackHeight = trackHeight,
+                    sliderValue = sliderValue / trackLength.toFloat(),
+                    activeTrackColor = MaterialTheme.colorScheme.onBackground,
+                    inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f)
+                )
+            }
         )
         Row(
             modifier = Modifier
@@ -290,6 +319,71 @@ private fun SeekBar(
             )
         }
     }
+}
+
+@Composable
+@ExperimentalMaterial3Api
+fun Track(
+    modifier: Modifier = Modifier,
+    trackHeight: Dp,
+    sliderValue: Float,
+    inactiveTrackColor: Color,
+    activeTrackColor: Color,
+) {
+    Canvas(
+        modifier
+            .fillMaxWidth()
+            .height(trackHeight)
+    ) {
+        drawTrack(
+            trackHeight,
+            0f,
+            sliderValue,
+            inactiveTrackColor,
+            activeTrackColor,
+        )
+    }
+}
+
+private fun DrawScope.drawTrack(
+    trackHeight: Dp,
+    activeRangeStart: Float,
+    activeRangeEnd: Float,
+    inactiveTrackColor: Color,
+    activeTrackColor: Color,
+) {
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val sliderLeft = Offset(0f, center.y)
+    val sliderRight = Offset(size.width, center.y)
+    val sliderStart = if (isRtl) sliderRight else sliderLeft
+    val sliderEnd = if (isRtl) sliderLeft else sliderRight
+    val trackStrokeWidth = trackHeight.toPx()
+    drawLine(
+        inactiveTrackColor,
+        sliderStart,
+        sliderEnd,
+        trackStrokeWidth,
+        StrokeCap.Round
+    )
+    val sliderValueEnd = Offset(
+        sliderStart.x +
+                (sliderEnd.x - sliderStart.x) * activeRangeEnd,
+        center.y
+    )
+
+    val sliderValueStart = Offset(
+        sliderStart.x +
+                (sliderEnd.x - sliderStart.x) * activeRangeStart,
+        center.y
+    )
+
+    drawLine(
+        activeTrackColor,
+        sliderValueStart,
+        sliderValueEnd,
+        trackStrokeWidth,
+        StrokeCap.Round
+    )
 }
 
 @Preview
