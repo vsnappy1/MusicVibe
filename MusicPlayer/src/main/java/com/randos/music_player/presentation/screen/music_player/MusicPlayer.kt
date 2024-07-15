@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Circle
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +31,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +44,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
 import com.randos.core.data.model.MusicFile
@@ -47,6 +53,7 @@ import com.randos.core.presentation.component.BouncyComposable
 import com.randos.core.utils.defaultPadding
 import com.randos.music_player.presentation.component.MusicPlaybackController
 import com.randos.music_player.presentation.component.MusicPlaybackControllerState
+import com.randos.music_player.presentation.screen.TrackDetailLayout
 
 object MusicPlayerNavigationDestination : NavigationDestinationWithParams {
     override val name: String = "Music Player"
@@ -71,7 +78,9 @@ fun MusicPlayer(
     val viewModel: MusicPlayerViewModel = hiltViewModel()
     val state by viewModel.uiState.observeAsState(MusicPlayerState())
 
-    val backgroundColor = state.backgroundColor?.let { Color(it) } ?: MaterialTheme.colorScheme.background
+    var isTrackDetailLayoutVisible by remember { mutableStateOf(false) }
+    val backgroundColor =
+        state.backgroundColor?.let { Color(it) } ?: MaterialTheme.colorScheme.background
     Box(
         modifier = Modifier
             .background(gradientBackgroundColor(backgroundColor))
@@ -84,7 +93,11 @@ fun MusicPlayer(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             BackButton(onBack = onBack)
-            OptionMenu()
+            OptionMenu(
+                onTrackDetailsClick = { isTrackDetailLayoutVisible = true },
+                onShareClick = {},
+                onDeleteClick = {}
+            )
         }
 
         PreviewImageTitleArtist(
@@ -107,13 +120,61 @@ fun MusicPlayer(
                 viewModel.onSeekPositionChangeFinished(it)
             }
         )
+
+        if (isTrackDetailLayoutVisible) {
+            Dialog(onDismissRequest = { isTrackDetailLayoutVisible = false }) {
+                TrackDetailLayout(musicFile = state.currentTrack)
+            }
+        }
     }
 }
 
 @Composable
-private fun OptionMenu() {
-    BouncyComposable(onClick = { /*TODO*/ }) {
-        ThreeDotsOptionMenu()
+private fun OptionMenu(
+    onTrackDetailsClick: () -> Unit,
+    onShareClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    var isContextMenuVisible by remember { mutableStateOf(false) }
+
+    Column {
+
+        BouncyComposable(onClick = { isContextMenuVisible = true }) {
+            ThreeDotsOptionMenu()
+        }
+        DropdownMenu(
+            expanded = isContextMenuVisible,
+            onDismissRequest = { isContextMenuVisible = false }) {
+            DropdownMenuItem(
+                text = {
+                    Text(text = "Track Details")
+                },
+                onClick = {
+                    onTrackDetailsClick()
+                    isContextMenuVisible = false
+                }
+            )
+
+            DropdownMenuItem(
+                text = {
+                    Text(text = "Share")
+                },
+                onClick = {
+                    onShareClick()
+                    isContextMenuVisible = false
+                }
+            )
+
+            DropdownMenuItem(
+                text = {
+                    Text(text = "Delete")
+                },
+                onClick = {
+                    onDeleteClick()
+                    isContextMenuVisible = false
+                }
+            )
+        }
     }
 }
 

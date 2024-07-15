@@ -9,6 +9,7 @@ data class MusicFile(
     val path: String,
     val dateAdded: Long,
     val genre: String?,
+    val size: String
 ) {
     companion object {
         fun default(): MusicFile {
@@ -20,7 +21,8 @@ data class MusicFile(
                 duration = 1000,
                 path = "",
                 dateAdded = 0,
-                genre = null
+                genre = null,
+                size = ""
             )
         }
     }

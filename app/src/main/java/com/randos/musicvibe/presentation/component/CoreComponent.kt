@@ -103,7 +103,7 @@ fun MusicItem(
 @Composable
 fun PreviewMusicItem() {
     MusicItem(
-        musicFile = MusicFile(1, "Title", "Artist", "Album", 100, "", 100, "Rock"),
+        musicFile = MusicFile(1, "Title", "Artist", "Album", 100, "", 100, "Rock", "3.45Mb"),
         defaultMusicThumbnail = Utils.getDefaultThumbnail(LocalContext.current),
         onClick = {}
     )

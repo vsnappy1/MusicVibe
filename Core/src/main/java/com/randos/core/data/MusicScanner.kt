@@ -6,6 +6,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import com.randos.core.data.model.MusicFile
 import com.randos.core.utils.ApiLevelHelper
+import com.randos.core.utils.Utils
 import com.randos.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +48,7 @@ class MusicScanner(private val context: Context) {
             MediaStore.Audio.Media.DATE_ADDED,
             MediaStore.Audio.Media.DATA, // Path to the file
             MediaStore.Audio.Media.ALBUM_ID,
+            MediaStore.Audio.Media.SIZE,
         )
 
         /**
@@ -74,6 +76,7 @@ class MusicScanner(private val context: Context) {
                     val durationColumIndex = getColumnIndex(MediaStore.Audio.Media.DURATION)
                     val dateAddedColumnIndex = getColumnIndex(MediaStore.Audio.Media.DATE_ADDED)
                     val dataColumIndex = getColumnIndex(MediaStore.Audio.Media.DATA)
+                    val sizeColumIndex = getColumnIndex(MediaStore.Audio.Media.SIZE)
 
                     val id = getLong(idColumnIndex)
                     val title = getString(titleColumnIndex)
@@ -82,6 +85,7 @@ class MusicScanner(private val context: Context) {
                     val duration = getInt(durationColumIndex).toLong()
                     val path = getString(dataColumIndex)
                     val dateAdded = getInt(dateAddedColumnIndex).toLong()
+                    val size = getLong(sizeColumIndex)
 
                     /**
                      * The genre of the audio file can only be accessed in Api level 30 or above
@@ -102,6 +106,7 @@ class MusicScanner(private val context: Context) {
                         path = path,
                         dateAdded = dateAdded,
                         genre = genre,
+                        size = Utils.toReadableSize(size)
                     )
                     musicFiles.add(musicFile)
                 }
