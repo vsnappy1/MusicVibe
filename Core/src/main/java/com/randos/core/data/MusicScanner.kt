@@ -6,6 +6,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import com.randos.core.data.model.MusicFile
 import com.randos.core.utils.ApiLevelHelper
+import com.randos.core.utils.PermissionManager.isMediaReadPermissionGranted
 import com.randos.core.utils.Utils
 import com.randos.logger.Logger
 import kotlinx.coroutines.CoroutineScope
@@ -27,11 +28,14 @@ class MusicScanner(private val context: Context) {
         scan()
     }
 
-    fun scan(): Job {
-        return CoroutineScope(Dispatchers.IO).launch {
-            getAllMusicFiles()
-            getMediaItems()
+    fun scan(): Job? {
+        if(context.isMediaReadPermissionGranted()){
+            return CoroutineScope(Dispatchers.IO).launch {
+                getAllMusicFiles()
+                getMediaItems()
+            }
         }
+        return null
     }
 
     /**

@@ -32,6 +32,10 @@ class MusicPlayerViewModel @Inject constructor(
         }
     }
 
+    fun rescan(){
+        musicVibeMediaController.rescan()
+    }
+
     fun play(index: Int){
         musicVibeMediaController.setMediaIndex(index)
     }
@@ -80,5 +84,9 @@ class MusicPlayerViewModel @Inject constructor(
      */
     fun onSeekPositionChangeFinished(position: Long) {
         musicVibeMediaController.onSeekPositionChangeFinished(position)
+    }
+
+    fun onMediaFileDeleted(index: Int) {
+        musicVibeMediaController.onFileDeleted(index)
     }
 }

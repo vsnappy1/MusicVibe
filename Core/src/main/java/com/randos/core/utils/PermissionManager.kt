@@ -1,9 +1,13 @@
-package com.randos.musicvibe.utils
+package com.randos.core.utils
 
+import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.randos.core.utils.PermissionManager.isPermissionGranted
 
 
 /**
@@ -62,5 +66,28 @@ object PermissionManager {
         } else {
             permissionNotGranted()
         }
+    }
+
+    fun Context.isPermissionGranted(permission: String): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            permission
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun Context.isMediaReadPermissionGranted(): Boolean {
+        return isPermissionGranted(getMediaReadPermissionString())
+    }
+
+    fun getMediaReadPermissionString(): String {
+        return if (Build.VERSION.SDK_INT == Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_AUDIO
+        }else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+    }
+
+    fun getMediaWritePermissionString(): String{
+        return Manifest.permission.WRITE_EXTERNAL_STORAGE
     }
 }

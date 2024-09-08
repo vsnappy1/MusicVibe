@@ -50,6 +50,7 @@ import androidx.media3.common.util.UnstableApi
 import com.randos.core.data.model.MusicFile
 import com.randos.core.navigation.NavigationDestinationWithParams
 import com.randos.core.presentation.component.BouncyComposable
+import com.randos.core.utils.IoUtils
 import com.randos.core.utils.defaultPadding
 import com.randos.music_player.presentation.component.MusicPlaybackController
 import com.randos.music_player.presentation.component.MusicPlaybackControllerState
@@ -79,6 +80,16 @@ fun MusicPlayer(
     val state by viewModel.uiState.observeAsState(MusicPlayerState())
 
     var isTrackDetailLayoutVisible by remember { mutableStateOf(false) }
+    var isDeleteConfirmationLayoutVisible by remember { mutableStateOf(false) }
+
+    /*
+      When there is only one music file and user decides to delete it, index is set to -1 and this
+      this sends user back to track screen.
+     */
+    if (state.index == -1) {
+        onBack()
+    }
+
     val backgroundColor =
         state.backgroundColor?.let { Color(it) } ?: MaterialTheme.colorScheme.background
     Box(
@@ -96,7 +107,7 @@ fun MusicPlayer(
             OptionMenu(
                 onTrackDetailsClick = { isTrackDetailLayoutVisible = true },
                 onShareClick = {},
-                onDeleteClick = {}
+                onDeleteClick = { isDeleteConfirmationLayoutVisible = true }
             )
         }
 
@@ -124,6 +135,19 @@ fun MusicPlayer(
         if (isTrackDetailLayoutVisible) {
             Dialog(onDismissRequest = { isTrackDetailLayoutVisible = false }) {
                 TrackDetailLayout(musicFile = state.currentTrack)
+            }
+        }
+
+        if (isDeleteConfirmationLayoutVisible) {
+            Dialog(onDismissRequest = { isDeleteConfirmationLayoutVisible = false }) {
+                IoUtils.DeleteTrackConfirmationLayout(
+                    musicFile = state.currentTrack,
+                    onCancelClick = { isDeleteConfirmationLayoutVisible = false },
+                    onDeleteClick = { isDeleteConfirmationLayoutVisible = false },
+                    onMediaFileDeleted = {
+                        viewModel.onMediaFileDeleted(state.index)
+                    }
+                )
             }
         }
     }

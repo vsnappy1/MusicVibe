@@ -6,12 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.randos.core.data.MusicScanner
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class TrackViewModel @Inject constructor(
-    musicScanner: MusicScanner
+    private val musicScanner: MusicScanner
 ) : ViewModel() {
 
     private val indexMap = mutableMapOf<Char, Int>()
@@ -19,7 +20,16 @@ class TrackViewModel @Inject constructor(
     val uiState: LiveData<TrackScreenUiState> = _uiState
 
     init {
+        _uiState.postValue(
+            _uiState.value?.copy(
+                musicFiles = musicScanner.musicFiles,
+            )
+        )
+    }
+
+    fun rescan(){
         viewModelScope.launch {
+            delay(100)
             _uiState.postValue(
                 _uiState.value?.copy(
                     musicFiles = musicScanner.musicFiles,

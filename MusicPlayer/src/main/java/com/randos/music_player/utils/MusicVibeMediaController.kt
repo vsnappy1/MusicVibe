@@ -11,6 +11,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import com.randos.core.data.DataStoreManager
 import com.randos.core.data.MusicScanner
+import com.randos.core.data.model.MusicFile
 import com.randos.core.presentation.theme.seed
 import com.randos.core.utils.Utils
 import com.randos.logger.Logger
@@ -60,11 +61,12 @@ class MusicVibeMediaController @Inject constructor(
      */
     fun rescan() {
         CoroutineScope(Dispatchers.IO).launch {
-            musicScanner.scan().join()
+            musicScanner.scan()?.join()
             withContext(Dispatchers.Main) {
                 mediaController?.apply {
                     prepare()
                     setMediaItems(mediaItems)
+                    updateCurrentTrack()
                 }
             }
         }
@@ -75,19 +77,25 @@ class MusicVibeMediaController @Inject constructor(
         mediaControllerFuture.addListener({
             mediaController = mediaControllerFuture.get()
             mediaController?.apply {
+                if (mediaItems.isEmpty()) {
+                    Logger.w(this@MusicVibeMediaController, "No media items found.")
+                    _uiState.value.apply {
+                        _uiState.value = (this.copy(currentTrack = MusicFile.default(), index = -1))
+                    }
+                    return@apply
+                }
                 prepare()
                 setMediaItems(mediaItems)
                 addListener(playerListener())
                 CoroutineScope(Dispatchers.Main).launch {
                     shuffleModeEnabled = dataStore.getShuffleEnabled()
                     repeatMode = dataStore.getRepeatMode()
-                    val (id, playerDuration) = dataStore.getLastPlayedMusicFileDetails()
+                    val (id, playedDuration) = dataStore.getLastPlayedMusicFileDetails()
                     val index = musicFiles.indexOfFirst { it.id == id }
-                    if (index != -1 || playerDuration != -1L) {
-                        seekTo(index, playerDuration)
-                        updateCurrentTrack()
+                    if (index != -1) {
+                        seekTo(index, playedDuration)
                     }
-                    updateCurrentTrack(playerDuration)
+                    updateCurrentTrack(playedDuration)
                 }
                 Logger.i(this@MusicVibeMediaController, "Player is ready.")
             }
@@ -240,12 +248,13 @@ class MusicVibeMediaController @Inject constructor(
      * [ExoPlayer] plays a track this method gets details of this track and update the UI.
      */
     private fun updateCurrentTrack(seekPosition: Long = 0) {
+        if (musicFiles.isEmpty()) return
         mediaController?.apply {
             _uiState.value.apply {
                 val currentTrack = musicFiles[currentMediaItemIndex]
                 _uiState.value = (
                         this.copy(
-                            index = index,
+                            index = currentMediaItemIndex,
                             currentTrack = currentTrack,
                             controllerState = controllerState.copy(
                                 shuffleEnabled = shuffleModeEnabled,
@@ -395,6 +404,22 @@ class MusicVibeMediaController @Inject constructor(
         _uiState.value.apply {
             _uiState.value =
                 (this.copy(controllerState = controllerState.copy(seekPosition = seekPosition)))
+        }
+    }
+
+    fun onFileDeleted(index: Int) {
+        musicFiles.removeAt(index)
+        mediaItems.removeAt(index)
+        CoroutineScope(Dispatchers.Main).launch {
+            mediaController?.setMediaItems(mediaItems)
+            if (index in 0..<mediaItems.size) {
+                mediaController?.seekTo(index % mediaItems.size, 0)
+                updateCurrentTrack()
+            } else {
+                _uiState.value.apply {
+                    _uiState.value = (this.copy(currentTrack = MusicFile.default(), index = -1))
+                }
+            }
         }
     }
 }

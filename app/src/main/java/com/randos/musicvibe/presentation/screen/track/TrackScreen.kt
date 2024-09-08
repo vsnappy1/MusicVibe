@@ -1,5 +1,7 @@
 package com.randos.musicvibe.presentation.screen.track
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -27,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,14 +45,18 @@ import com.randos.core.data.MusicScanner
 import com.randos.core.data.model.MusicFile
 import com.randos.core.navigation.NavigationDestination
 import com.randos.core.presentation.theme.seed
+import com.randos.core.utils.PermissionManager.getMediaReadPermissionString
+import com.randos.core.utils.PermissionManager.isMediaReadPermissionGranted
 import com.randos.core.utils.Utils
 import com.randos.core.utils.defaultPadding
+import com.randos.logger.Logger
 import com.randos.music_player.presentation.component.MusicPlaybackButtons
 import com.randos.music_player.presentation.screen.music_player.MusicPlayer
 import com.randos.music_player.presentation.screen.music_player.MusicPlayerState
 import com.randos.music_player.presentation.screen.music_player.MusicPlayerViewModel
 import com.randos.musicvibe.presentation.component.AlphabetSlider
 import com.randos.musicvibe.presentation.component.MusicItem
+import kotlinx.coroutines.delay
 
 object TrackScreenNavigationDestination : NavigationDestination {
     override val name: String = "Track"
@@ -64,8 +71,6 @@ data class TrackScreenUiState(
 /**
  * Screen to represent all tracks present on device.
  *
- * @param onItemClick Invoked when any of the items in list is clicked, the int parameter is the
- * index of selected item.
  * [TrackScreen] and [MusicPlayer] uses the same data source, that is [MusicScanner].
  */
 
@@ -84,12 +89,27 @@ fun TrackScreen(
     val musicPlayerViewModel: MusicPlayerViewModel = hiltViewModel()
     val musicPlayerState by musicPlayerViewModel.uiState.observeAsState(MusicPlayerState())
 
+    var isMediaReadPermissionGranted by remember { mutableStateOf(false) }
+    val mediaReadRequestLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            isMediaReadPermissionGranted = granted
+            if (granted) {
+                Logger.i(context, "Media Read permission granted")
+                musicPlayerViewModel.rescan()
+                viewModel.rescan()
+            } else {
+                Logger.i(context, "Media Read permission denied")
+            }
+        }
+    isMediaReadPermissionGranted = context.isMediaReadPermissionGranted()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .defaultPadding(start = 0.dp, end = 0.dp),
         contentAlignment = Alignment.Center
     ) {
+
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             state = lazyListState,
@@ -110,8 +130,8 @@ fun TrackScreen(
                     )
                 }
             }
-
         }
+
         AlphabetSlider(modifier = Modifier
             .align(Alignment.CenterEnd)
             .padding(end = 8.dp),
@@ -126,12 +146,27 @@ fun TrackScreen(
         BottomMusicPlayer(
             modifier = Modifier.align(Alignment.BottomCenter),
             musicPlayerState = musicPlayerState,
-            onBottomPlayerClick = onBottomPlayerClick,
+            onBottomPlayerClick = { onBottomPlayerClick() },
+            enabled = uiState.musicFiles.isNotEmpty(),
             onNextClick = { musicPlayerViewModel.onNextClick() },
             onPreviousClick = { musicPlayerViewModel.onPreviousClick() },
             onPlayPauseClick = { musicPlayerViewModel.onPlayPauseClick() })
+
+        Box(modifier = Modifier.padding(24.dp)){
+            if (!isMediaReadPermissionGranted) {
+                Text(text = "Please grant media permission, to see your music files")
+            } else if (uiState.musicFiles.isEmpty()) {
+                Text(text = "No music files found :(")
+            }
+        }
     }
 
+    LaunchedEffect(Unit) {
+        delay(100)
+        if (!isMediaReadPermissionGranted) {
+            mediaReadRequestLauncher.launch(getMediaReadPermissionString())
+        }
+    }
     LaunchedEffect(key1 = uiState.selectedIndex) {
         uiState.selectedIndex?.let { lazyListState.scrollToItem(it) }
     }
@@ -142,6 +177,7 @@ private fun BottomMusicPlayer(
     modifier: Modifier = Modifier,
     musicPlayerState: MusicPlayerState,
     onBottomPlayerClick: () -> Unit,
+    enabled: Boolean,
     onPlayPauseClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
@@ -157,7 +193,7 @@ private fun BottomMusicPlayer(
             )
             .border(1.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
             .clip(CircleShape)
-            .clickable { onBottomPlayerClick() },
+            .clickable(enabled) { onBottomPlayerClick() },
         contentAlignment = Alignment.Center
     ) {
         musicPlayerState.apply {

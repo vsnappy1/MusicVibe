@@ -79,10 +79,12 @@ class DataStoreManager(private val dataStore: DataStore<Preferences>) {
     }
 
     /**
-     * Gets the last played music file id and duration from the data store, if not found returns -1.
+     * Gets the last played music file `id` and `played_duration` from the data store.
      *
-     * @return a [Pair] first value is if and second value is played duration of music file. if not
-     * found returns -1.
+     * If `id` not found returns -1
+     * If `played_duration` not found returns 0
+     *
+     * @return a [Pair] first value is `id` and second value is `played_duration` of music file.
      */
     suspend fun getLastPlayedMusicFileDetails(): Pair<Long, Long> {
         return Pair(
@@ -90,7 +92,7 @@ class DataStoreManager(private val dataStore: DataStore<Preferences>) {
                 preferences[LAST_PLAYED_MUSIC_FILE_ID] ?: -1
             }.first(),
             dataStore.data.map { preferences ->
-                preferences[LAST_PLAYED_MUSIC_FILE_PLAYED_DURATION] ?: -1
+                preferences[LAST_PLAYED_MUSIC_FILE_PLAYED_DURATION] ?: 0
             }.first())
     }
 }
