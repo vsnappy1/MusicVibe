@@ -17,6 +17,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("boolean", "IS_BENCHMARKING", "false")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -37,12 +38,20 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+
+        create("benchmark") {
+            initWith(buildTypes.getByName("release"))
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+            proguardFiles("baseline-profiles-rules.pro")
+            buildConfigField("boolean", "IS_BENCHMARKING", "true")
         }
     }
     compileOptions {
@@ -54,6 +63,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -69,6 +79,7 @@ dependencies {
 
     implementation(project(":MusicPlayer"))
     implementation(project(":Core"))
+    implementation(project(":logger"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -92,7 +103,9 @@ dependencies {
 
     // --- Glide ---
     implementation (libs.glide.compose)
-    implementation(project(":logger"))
+
+    // --- Baseline profile ---
+    implementation(libs.androidx.profileinstaller)
 
     // --- Kapt ---
     kaptAndroidTest (libs.hilt.compiler)

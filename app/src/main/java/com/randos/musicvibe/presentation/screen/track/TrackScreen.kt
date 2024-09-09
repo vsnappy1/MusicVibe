@@ -54,6 +54,7 @@ import com.randos.music_player.presentation.component.MusicPlaybackButtons
 import com.randos.music_player.presentation.screen.music_player.MusicPlayer
 import com.randos.music_player.presentation.screen.music_player.MusicPlayerState
 import com.randos.music_player.presentation.screen.music_player.MusicPlayerViewModel
+import com.randos.musicvibe.BuildConfig
 import com.randos.musicvibe.presentation.component.AlphabetSlider
 import com.randos.musicvibe.presentation.component.MusicItem
 import kotlinx.coroutines.delay
@@ -163,7 +164,7 @@ fun TrackScreen(
 
     LaunchedEffect(Unit) {
         delay(100)
-        if (!isMediaReadPermissionGranted) {
+        if (!isMediaReadPermissionGranted && !BuildConfig.IS_BENCHMARKING) {
             mediaReadRequestLauncher.launch(getMediaReadPermissionString())
         }
     }

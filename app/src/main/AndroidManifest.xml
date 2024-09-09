@@ -21,6 +21,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MusicVibe"
         tools:targetApi="31">
+        <profileable
+            android:shell="true"
+            tools:targetApi="29" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -34,10 +38,10 @@
 
         <service
             android:name="com.randos.music_player.service.MusicSessionService"
-            android:exported="true"
+            android:exported="false"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
-                <action android:name="androidx.media3.session.MediaSessionService"/>
+                <action android:name="androidx.media3.session.MediaSessionService" />
             </intent-filter>
         </service>
     </application>

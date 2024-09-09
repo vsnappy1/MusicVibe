@@ -5,4 +5,5 @@ plugins {
     alias(libs.plugins.daggerHilt) apply false
     kotlin("kapt") version "1.9.0"
     alias(libs.plugins.androidLibrary) apply false
+    alias(libs.plugins.androidTest) apply false
 }
