@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,22 +43,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.randos.core.data.MusicScanner
-import com.randos.core.data.model.MusicFile
-import com.randos.core.navigation.NavigationDestination
-import com.randos.core.presentation.theme.seed
-import com.randos.core.utils.PermissionManager.getMediaReadPermissionString
-import com.randos.core.utils.PermissionManager.isMediaReadPermissionGranted
-import com.randos.core.utils.Utils
-import com.randos.core.utils.defaultPadding
+import com.randos.domain.model.MusicFile
 import com.randos.logger.Logger
-import com.randos.music_player.presentation.component.MusicPlaybackButtons
-import com.randos.music_player.presentation.screen.music_player.MusicPlayer
-import com.randos.music_player.presentation.screen.music_player.MusicPlayerState
-import com.randos.music_player.presentation.screen.music_player.MusicPlayerViewModel
+import com.randos.musicvibe.navigation.NavigationDestination
+import com.randos.musicvibe.presentation.screen.music_player.MusicPlayer
+import com.randos.musicvibe.presentation.screen.music_player.MusicPlayerState
+import com.randos.musicvibe.presentation.screen.music_player.MusicPlayerViewModel
 import com.randos.musicvibe.presentation.component.AlphabetSlider
 import com.randos.musicvibe.presentation.component.MusicItem
-import kotlinx.coroutines.delay
+import com.randos.musicvibe.presentation.component.MusicPlaybackButtons
+import com.randos.musicvibe.presentation.theme.seed
+import com.randos.musicvibe.utils.Utils
+import com.randos.musicvibe.utils.defaultPadding
 
 object TrackScreenNavigationDestination : NavigationDestination {
     override val name: String = "Track"
@@ -94,14 +92,14 @@ fun TrackScreen(
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             isMediaReadPermissionGranted = granted
             if (granted) {
-                Logger.i(context, "Media Read permission granted")
-                musicPlayerViewModel.rescan()
+                Logger.i("Media Read permission granted")
                 viewModel.rescan()
+                musicPlayerViewModel.rescan()
             } else {
-                Logger.i(context, "Media Read permission denied")
+                Logger.i("Media Read permission denied")
             }
         }
-    isMediaReadPermissionGranted = context.isMediaReadPermissionGranted()
+    isMediaReadPermissionGranted = viewModel.permissionManager.isMediaReadPermissionGranted()
 
     Box(
         modifier = Modifier
@@ -125,9 +123,12 @@ fun TrackScreen(
                         musicFile = items[index],
                         defaultMusicThumbnail = defaultMusicThumbnail,
                         onClick = {
-                            musicPlayerViewModel.play(index)
+                            musicPlayerViewModel.playAtIndex(index)
                         }
                     )
+                }
+                items(1){
+                    Spacer(modifier = Modifier.height(50.dp))
                 }
             }
         }
@@ -162,13 +163,20 @@ fun TrackScreen(
     }
 
     LaunchedEffect(Unit) {
-        delay(100)
         if (!isMediaReadPermissionGranted) {
-            mediaReadRequestLauncher.launch(getMediaReadPermissionString())
+            viewModel.permissionManager.setReadPermissionLauncher(mediaReadRequestLauncher)
+            viewModel.permissionManager.requestMediaReadPermission()
         }
     }
     LaunchedEffect(key1 = uiState.selectedIndex) {
         uiState.selectedIndex?.let { lazyListState.scrollToItem(it) }
+    }
+
+    // If number of music item has changed update the list of tracks.
+    LaunchedEffect(Unit) {
+        if(viewModel.hasMediaItemCountChanged() && isMediaReadPermissionGranted){
+            viewModel.rescan()
+        }
     }
 }
 
@@ -202,8 +210,9 @@ private fun BottomMusicPlayer(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                val thumbnail = bitmap?: Utils.getDefaultThumbnail(LocalContext.current)
                 Image(
-                    bitmap = bitmap.asImageBitmap(), contentDescription = "Preview Image",
+                    bitmap = thumbnail.asImageBitmap(), contentDescription = "Preview Image",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .padding(start = 12.dp)

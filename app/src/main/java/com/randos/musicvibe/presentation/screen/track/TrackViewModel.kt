@@ -1,47 +1,47 @@
 package com.randos.musicvibe.presentation.screen.track
 
+import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.randos.core.data.MusicScanner
+import com.randos.domain.manager.MusicPlayer
+import com.randos.domain.manager.PermissionManager
+import com.randos.domain.repository.MusicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class TrackViewModel @Inject constructor(
-    private val musicScanner: MusicScanner
+    private val musicPlayer: MusicPlayer,
+    private val musicRepository: MusicRepository,
+    val permissionManager: PermissionManager<ActivityResultLauncher<String>>
 ) : ViewModel() {
 
     private val indexMap = mutableMapOf<Char, Int>()
     private val _uiState = MutableLiveData(TrackScreenUiState())
     val uiState: LiveData<TrackScreenUiState> = _uiState
 
-    init {
-        _uiState.postValue(
-            _uiState.value?.copy(
-                musicFiles = musicScanner.musicFiles,
-            )
-        )
-    }
-
-    fun rescan(){
+    fun rescan() {
         viewModelScope.launch {
-            delay(100)
             _uiState.postValue(
                 _uiState.value?.copy(
-                    musicFiles = musicScanner.musicFiles,
+                    musicFiles = musicRepository.getMusicFiles(),
                 )
             )
         }
     }
 
+    fun hasMediaItemCountChanged(): Boolean{
+        val musicFilesCount = _uiState.value?.musicFiles?.size ?: 0
+        return musicFilesCount != musicPlayer.getMediaItemCount()
+    }
+
     /**
      * Find the index of first element which starts with [alphabet], if not found algorithm looks for
-     * previous alphabet (i.e. if there is no element which starts with X, then algorithm looks for
-     * element which starts W) and repeat the same for this alphabet.
+     * previous alphabet (i.e. if there is no element which starts with B, then algorithm looks for
+     * element which starts A) and repeat the same for this alphabet.
      */
     private fun getIndex(alphabet: Char): Int {
         /**

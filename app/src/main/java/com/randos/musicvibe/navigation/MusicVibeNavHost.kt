@@ -6,8 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.randos.music_player.presentation.screen.music_player.MusicPlayer
-import com.randos.music_player.presentation.screen.music_player.MusicPlayerNavigationDestination
+import com.randos.musicvibe.presentation.screen.music_player.MusicPlayer
+import com.randos.musicvibe.presentation.screen.music_player.MusicPlayerNavigationDestination
 import com.randos.musicvibe.presentation.screen.track.TrackScreen
 import com.randos.musicvibe.presentation.screen.track.TrackScreenNavigationDestination
 

@@ -4,17 +4,18 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     alias(libs.plugins.daggerHilt)
+    alias(libs.plugins.compose.compiler)
     id("kotlin-kapt")
 }
 
 android {
     namespace = "com.randos.musicvibe"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.randos.musicvibe"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -67,8 +68,8 @@ android {
 
 dependencies {
 
-    implementation(project(":MusicPlayer"))
-    implementation(project(":Core"))
+    implementation(project(":domain"))
+    implementation(project(":data"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -78,6 +79,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
 
     // --- Dagger Hilt ---
     implementation(libs.hilt.android)
@@ -93,6 +95,7 @@ dependencies {
     // --- Glide ---
     implementation (libs.glide.compose)
     implementation(project(":logger"))
+    implementation(libs.androidx.palette.ktx)
 
     // --- Kapt ---
     kaptAndroidTest (libs.hilt.compiler)
