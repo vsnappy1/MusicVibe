@@ -2,457 +2,238 @@ package com.randos.logger
 
 import android.util.Log
 
-/**
- * Enumeration representing different levels of logging.
- *
- * This enum defines various log levels that indicate the severity of logged messages.
- * Each log level corresponds to a specific type of log message, ranging from the most
- * detailed (VERBOSE) to the most critical (WTF - What a Terrible Failure).
- *
- * @property VERBOSE Verbose level indicating detailed logging.
- * @property DEBUG Debug level for logging messages useful during development.
- * @property INFO Informational level for general logging purposes.
- * @property WARNING Warning level indicating potential issues that require attention.
- * @property ERROR Error level indicating critical failures that need immediate attention.
- * @property WTF Critical level indicating unexpected and severe failures.
- */
-private enum class LogLevel {
-    VERBOSE,
-    DEBUG,
-    INFO,
-    WARNING,
-    ERROR,
-    WTF // What a Terrible Failure ;)
-}
+object Logger {
 
-/**
- * Utility class for logging messages at different levels of severity.
- *
- * This class provides methods to log messages at various levels, from verbose debugging information
- * to critical error and failure messages. It uses the Android `Log` class for logging operations
- * and supports sending critical logs to analytics for monitoring and analysis.
- *
- * Example usage:
- * ```
- * class MyClass {
- *     fun someMethod() {
- *         Logger.d(this@MyClass, "Debug message", null)
- *         Logger.e(this@MyClass, "Error message", exception)
- *     }
- * }
- * ```
- */
-class Logger {
+    // ---- VERBOSE ----
 
-    companion object {
+    /**
+     * Send a [LogType.VERBOSE] log message.
+     * Note* For Tag It tries to get the class name where log statement is invoked.
+     * @param msg The message you would like logged.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun v(msg: String): Int {
+        return log(LogType.VERBOSE, getClassName(), msg)
+    }
 
-        private val criticalLogLevels = setOf(LogLevel.WARNING, LogLevel.ERROR, LogLevel.WTF)
+    /**
+     * Send a [LogType.VERBOSE] log message.
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     * the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun v(tag: String, msg: String): Int {
+        return log(LogType.VERBOSE, tag, msg)
+    }
 
-        /**
-         * Logs a verbose message along with the caller's file name and line number.
-         *
-         * This method should be used to log verbose messages that provide detailed information about
-         * the application's behavior. These logs are typically used for debugging and are not usually
-         * necessary in a production environment. The `caller` parameter should be the reference to
-         * the enclosing class, typically passed using `this@EnclosingClass` to ensure the log correctly
-         * identifies the location where the log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun someMethod() {
-         *         Logger.v(this@MyClass, "This is a verbose log message")
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         */
-        fun v(caller: Any, msg: String) {
-            log(caller, msg, null, LogLevel.VERBOSE)
+    /**
+     * Send a [LogType.VERBOSE] log message and log the exception.
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     * the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     * @param tr An exception to log.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun v(tag: String, msg: String, tr: Throwable?): Int {
+        return log(LogType.VERBOSE, tag, msg, tr)
+    }
+
+    // ---- DEBUG ----
+
+    /**
+     * Send a [LogType.DEBUG] log message.
+     * Note* For Tag It tries to get the class name where log statement is invoked.
+     * @param msg The message you would like logged.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun d(msg: String): Int {
+        return log(LogType.DEBUG, getClassName(), msg)
+    }
+
+    /**
+     * Send a [LogType.DEBUG] log message.
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     * the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun d(tag: String, msg: String): Int {
+        return log(LogType.DEBUG, tag, msg)
+    }
+
+    /**
+     * Send a [LogType.DEBUG] log message and log the exception.
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     * the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     * @param tr An exception to log.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun d(tag: String, msg: String, tr: Throwable?): Int {
+        return log(LogType.DEBUG, tag, msg, tr)
+    }
+
+    // ---- INFO ----
+
+    /**
+     * Send a [LogType.INFO] log message.
+     * Note* For Tag It tries to get the class name where log statement is invoked.
+     * @param msg The message you would like logged.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun i(msg: String): Int {
+        return log(LogType.INFO, getClassName(), msg)
+    }
+
+    /**
+     * Send an [LogType.INFO] log message.
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     * the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun i(tag: String, msg: String): Int {
+        return log(LogType.INFO, tag, msg)
+    }
+
+    /**
+     * Send a [LogType.INFO] log message and log the exception.
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     * the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     * @param tr An exception to log.
+     */
+    @JvmStatic
+    fun i(tag: String, msg: String, tr: Throwable?): Int {
+        return log(LogType.INFO, tag, msg, tr)
+    }
+
+    // ---- WARN ----
+
+    /**
+     * Send a [LogType.WARN] log message.
+     * Note* For Tag It tries to get the class name where log statement is invoked.
+     * @param msg The message you would like logged.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun w(msg: String): Int {
+        return log(LogType.WARN, getClassName(), msg)
+    }
+
+    /**
+     * Send a [LogType.WARN] log message.
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     * the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun w(tag: String, msg: String): Int {
+        return log(LogType.WARN, tag, msg)
+    }
+
+    /**
+     * Send a [LogType.WARN] log message and log the exception.
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     * the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     * @param tr An exception to log.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun w(tag: String, msg: String, tr: Throwable?): Int {
+        return log(LogType.WARN, tag, msg, tr)
+    }
+
+    // ---- ERROR ----
+
+    /**
+     * Send a [LogType.ERROR] log message.
+     * Note* For Tag It tries to get the class name where log statement is invoked.
+     * @param msg The message you would like logged.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun e(msg: String): Int {
+        return log(LogType.ERROR, getClassName(), msg)
+    }
+
+    /**
+     * Send an [LogType.ERROR] log message.
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     * the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun e(tag: String, msg: String): Int {
+        return log(LogType.ERROR, tag, msg)
+    }
+
+    /**
+     * Send a [LogType.ERROR] log message and log the exception.
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     * the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     * @param tr An exception to log.
+     * @return A positive value if the message was loggable.
+     */
+    @JvmStatic
+    fun e(tag: String, msg: String, tr: Throwable?): Int {
+        return log(LogType.ERROR, tag, msg, tr)
+    }
+
+    private fun log(logType: LogType, tag: String, message: String, tr: Throwable? = null): Int {
+        val msg = if (BuildConfig.DEBUG) "$message | ${getCallerLocation()}" else message
+        val result = when (logType) {
+            LogType.VERBOSE -> if (tr == null) Log.v(tag, msg) else Log.v(tag, message, tr)
+            LogType.DEBUG -> if (tr == null) Log.d(tag, msg) else Log.d(tag, message, tr)
+            LogType.INFO -> if (tr == null) Log.i(tag, msg) else Log.i(tag, message, tr)
+            LogType.WARN -> if (tr == null) Log.w(tag, msg) else Log.w(tag, message, tr)
+            LogType.ERROR -> if (tr == null) Log.e(tag, msg) else Log.e(tag, message, tr)
         }
 
-        /**
-         * Logs a verbose message along with the caller's file name and line number.
-         *
-         * This method should be used to log verbose messages that provide detailed information about
-         * the application's behavior. These logs are typically used for debugging and are not usually
-         * necessary in a production environment. The `caller` parameter should be the reference to
-         * the enclosing class, typically passed using `this@EnclosingClass` to ensure the log correctly
-         * identifies the location where the log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun someMethod() {
-         *         Logger.v(this@MyClass, "This is a verbose log message", null)
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         * @param tr A throwable to log.
-         */
-        fun v(caller: Any, msg: String, tr: Throwable) {
-            log(caller, msg, tr, LogLevel.VERBOSE)
+        // If log type is error send this to crashlytics
+        if (logType == LogType.ERROR) {
+            println("Sending to crashlytics: $message")
         }
+        return result
+    }
 
-        /**
-         * Logs a debug message along with the caller's file name and line number.
-         *
-         * This method should be used to log debug messages that are useful for development and debugging
-         * purposes. These logs can provide insights into the application's state and behavior during
-         * development. The `caller` parameter should be the reference to the enclosing class, typically
-         * passed using `this@EnclosingClass` to ensure the log correctly identifies the location where the
-         * log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun someMethod() {
-         *         try {
-         *             // Some code that might throw an exception
-         *         } catch (e: Exception) {
-         *             Logger.d(this@MyClass, "A debug message")
-         *         }
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         */
-        fun d(caller: Any, msg: String) {
-            log(caller, msg, null, LogLevel.DEBUG)
-        }
+    /**
+     * This method retrieves the location from which it is called in terms of method name,
+     * file name, and line number. It is useful for logging purposes to identify where a log
+     * statement is triggered within the codebase.
+     *
+     * @return A string containing the method name, file name, and line number where the log
+     *         was triggered. Returns an empty string if the location cannot be determined.
+     */
+    private fun getCallerLocation(): String {
+        val exceptions = Thread.currentThread().stackTrace
+        val exception = exceptions.getOrNull(6)
+        return "[${exception?.methodName} - ${exception?.fileName}:${exception?.lineNumber}]"
+    }
 
-        /**
-         * Logs a debug message along with the caller's file name and line number.
-         *
-         * This method should be used to log debug messages that are useful for development and debugging
-         * purposes. These logs can provide insights into the application's state and behavior during
-         * development. The `caller` parameter should be the reference to the enclosing class, typically
-         * passed using `this@EnclosingClass` to ensure the log correctly identifies the location where the
-         * log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun someMethod() {
-         *         try {
-         *             // Some code that might throw an exception
-         *         } catch (e: Exception) {
-         *             Logger.d(this@MyClass, "A debug message", e)
-         *         }
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         * @param tr A throwable to log.
-         */
-        fun d(caller: Any, msg: String, tr: Throwable) {
-            log(caller, msg, tr, LogLevel.DEBUG)
-        }
+    /**
+     * Tries to get the class name where log statement was invoked using stack trace.
+     */
+    private fun getClassName(): String {
+        val exceptions = Thread.currentThread().stackTrace
+        val exception = exceptions.getOrNull(6)
+        return exception?.className?.split(".")?.last() ?: "Unknown ClassName"
+    }
 
-        /**
-         * Logs an info message along with the caller's file name and line number.
-         *
-         * This method should be used to log informational messages that are useful for tracking the flow
-         * of the application. The `caller` parameter should be the reference to the enclosing class,
-         * typically passed using `this@EnclosingClass` to ensure the log correctly identifies the location
-         * where the log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun updateName() {
-         *         val response = // some network request
-         *         if(response.isSuccessful()) {
-         *              Logger.i(this@MyClass, "User name updated successfully.")
-         *         }
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         */
-        fun i(caller: Any, msg: String) {
-            log(caller, msg, null, LogLevel.INFO)
-        }
-
-
-        /**
-         * Logs an info message along with the caller's file name and line number.
-         *
-         * This method should be used to log informational messages that are useful for tracking the flow
-         * of the application. The `caller` parameter should be the reference to the enclosing class,
-         * typically passed using `this@EnclosingClass` to ensure the log correctly identifies the location
-         * where the log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun updateName() {
-         *         val response = // some network request
-         *         if(response.isSuccessful()) {
-         *              Logger.i(this@MyClass, "User name updated successfully.")
-         *         }
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         * @param tr A throwable to log.
-         */
-        fun i(caller: Any, msg: String, tr: Throwable) {
-            log(caller, msg, tr, LogLevel.INFO)
-        }
-
-        /**
-         * Logs a warning message along with the caller's file name and line number.
-         *
-         * This method should be used to log warning messages that indicate a potential issue in the
-         * application. Warnings are used to highlight situations that are not necessarily errors but may
-         * require attention. The `caller` parameter should be the reference to the enclosing class,
-         * typically passed using `this@EnclosingClass` to ensure the log correctly identifies the location
-         * where the log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun someMethod() {
-         *         try {
-         *             // Some code that might throw an exception
-         *         } catch (e: Exception) {
-         *             Logger.w(this@MyClass, "A warning message")
-         *         }
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         */
-        fun w(caller: Any, msg: String) {
-            log(caller, msg, null, LogLevel.WARNING)
-        }
-
-        /**
-         * Logs a warning message along with the caller's file name and line number.
-         *
-         * This method should be used to log warning messages that indicate a potential issue in the
-         * application. Warnings are used to highlight situations that are not necessarily errors but may
-         * require attention. The `caller` parameter should be the reference to the enclosing class,
-         * typically passed using `this@EnclosingClass` to ensure the log correctly identifies the location
-         * where the log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun someMethod() {
-         *         try {
-         *             // Some code that might throw an exception
-         *         } catch (e: Exception) {
-         *             Logger.w(this@MyClass, "A warning message", e)
-         *         }
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         * @param tr A throwable to log.
-         */
-        fun w(caller: Any, msg: String, tr: Throwable) {
-            log(caller, msg, tr, LogLevel.WARNING)
-        }
-
-        /**
-         * Logs an error message along with the caller's file name and line number.
-         *
-         * This method should be used to log error messages that indicate a critical issue or unexpected
-         * behavior in the application. Errors typically require immediate attention and might indicate
-         * failures that need to be addressed. The `caller` parameter should be the reference to the
-         * enclosing class, typically passed using `this@EnclosingClass` to ensure the log correctly
-         * identifies the location where the log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun someMethod() {
-         *         try {
-         *             // Some code that might throw an exception
-         *         } catch (e: Exception) {
-         *             Logger.e(this@MyClass, "An error occurred")
-         *         }
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         */
-        fun e(caller: Any, msg: String) {
-            log(caller, msg, null, LogLevel.ERROR)
-        }
-
-        /**
-         * Logs an error message along with the caller's file name and line number.
-         *
-         * This method should be used to log error messages that indicate a critical issue or unexpected
-         * behavior in the application. Errors typically require immediate attention and might indicate
-         * failures that need to be addressed. The `caller` parameter should be the reference to the
-         * enclosing class, typically passed using `this@EnclosingClass` to ensure the log correctly
-         * identifies the location where the log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun someMethod() {
-         *         try {
-         *             // Some code that might throw an exception
-         *         } catch (e: Exception) {
-         *             Logger.e(this@MyClass, "An error occurred", e)
-         *         }
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         * @param tr The throwable that caused the error.
-         */
-        fun e(caller: Any, msg: String, tr: Throwable) {
-            log(caller, msg, tr, LogLevel.ERROR)
-        }
-
-        /**
-         * Logs a message at an unexpected critical level ("What a Terrible Failure") along with
-         * the caller's file name and line number.
-         *
-         * This method should be used to log messages that indicate a critical and unexpected failure
-         * in the application, where immediate attention is required. The `caller` parameter should
-         * be the reference to the enclosing class, typically passed using `this@EnclosingClass`
-         * to ensure the log correctly identifies the location where the log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun someMethod() {
-         *         try {
-         *             // Some critical operation that might fail
-         *         } catch (e: Exception) {
-         *             Logger.wtf(this@MyClass, "Critical failure occurred")
-         *         }
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         */
-        fun wtf(caller: Any, msg: String) {
-            log(caller, msg, null, LogLevel.WTF)
-        }
-
-        /**
-         * Logs a message at an unexpected critical level ("What a Terrible Failure") along with
-         * the caller's file name and line number.
-         *
-         * This method should be used to log messages that indicate a critical and unexpected failure
-         * in the application, where immediate attention is required. The `caller` parameter should
-         * be the reference to the enclosing class, typically passed using `this@EnclosingClass`
-         * to ensure the log correctly identifies the location where the log was triggered.
-         *
-         * Example usage:
-         * ```
-         * class MyClass {
-         *     fun someMethod() {
-         *         try {
-         *             // Some critical operation that might fail
-         *         } catch (e: Exception) {
-         *             Logger.wtf(this@MyClass, "Critical failure occurred", e)
-         *         }
-         *     }
-         * }
-         * ```
-         *
-         * @param caller The reference to the enclosing class (use `this@EnclosingClass`).
-         * @param msg The message to log.
-         * @param tr The throwable that caused the critical failure.
-         */
-        fun wtf(caller: Any, msg: String, tr: Throwable) {
-            log(caller, msg, tr, LogLevel.WTF)
-        }
-
-        /**
-         * This method logs messages along with optional throwable information at the specified
-         * log level. It uses the Android `Log` class to output logs based on the provided `logLevel`.
-         *
-         * @param caller The reference to the enclosing class.
-         * @param msg The message to log.
-         * @param tr An optional throwable to log. Pass `null` if no throwable is present.
-         * @param logLevel The log level indicating the severity of the log message.
-         */
-        private fun log(caller: Any, msg: String, tr: Throwable?, logLevel: LogLevel) {
-            val tag = caller::class.simpleName
-            val message = "$msg ${getLoggingLocation(caller)}"
-            when (logLevel) {
-                LogLevel.VERBOSE -> {
-                    Log.v(tag, message, tr)
-                }
-
-                LogLevel.DEBUG -> {
-                    Log.d(tag, message, tr)
-                }
-
-                LogLevel.INFO -> {
-                    Log.i(tag, message, tr)
-                }
-
-                LogLevel.WARNING -> {
-                    Log.w(tag, message, tr)
-                }
-
-                LogLevel.ERROR -> {
-                    Log.e(tag, message, tr)
-                }
-
-                LogLevel.WTF -> {
-                    Log.wtf(tag, message, tr)
-                }
-            }
-
-            if (logLevel in criticalLogLevels) {
-                // Send these logs to analytics
-                println("Sending logs to analytics")
-            }
-        }
-
-        /**
-         * This method retrieves the location from which it is called in terms of method name,
-         * file name, and line number. It is useful for logging purposes to identify where a log
-         * statement is triggered within the codebase.
-         *
-         * @param caller The reference to the enclosing class.
-         * @return A string containing the method name, file name, and line number where the log
-         *         was triggered, formatted as "methodName(fileName:lineNumber)". Returns an empty
-         *         string if the location cannot be determined.
-         */
-        private fun getLoggingLocation(caller: Any): String {
-            val exceptions = Thread.currentThread().stackTrace
-            for (exception in exceptions) {
-                if (exception.className == caller::class.java.name) {
-                    return "${exception.methodName}(${exception.fileName}:${exception.lineNumber})"
-                }
-            }
-            return ""
-        }
+    private enum class LogType {
+        VERBOSE, DEBUG, INFO, WARN, ERROR
     }
 }
